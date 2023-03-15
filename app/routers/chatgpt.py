@@ -67,7 +67,7 @@ async def chat(
     try:
         resp = result.get("choices")[0].get("message")
         # cache the response
-        redis_conn.lpush(user_id, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__))
+        redis_conn.rpush(user_id, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__))
         # Keep only the last 10 messages
         redis_conn.ltrim(user_id, 0, 9)
         # Sending results messages

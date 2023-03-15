@@ -6,4 +6,4 @@ RUN python -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 ENV PATH="/opt/app/.venv/bin:${PATH}"
 EXPOSE 8000
-CMD ["gunicorn", "--preload", "-c", "gunicorn.conf.py", "main:app"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
