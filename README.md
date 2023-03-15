@@ -37,5 +37,11 @@ docker run --rm -it -p8000:8000 chatgpt-api
 ## API Documentation
 The API documentation can be found at `http://localhost:8000/docs` once the Docker container is running.
 
+## Usage
+![image](https://user-images.githubusercontent.com/10207709/225383322-2c7c24ad-8c4f-4864-be1e-a04ceae2c7fd.png)
+You can save and continue conversations based on `user_id`. 
+Just put in a value that identifies the user. 
+For example, you can use the user's unique number, session information, etc. stored in the database.
+
 ## License
 This project is licensed under the terms of the MIT license. See [LICENSE](license) for more information.
