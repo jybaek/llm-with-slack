@@ -2,6 +2,15 @@
 This repository contains a simple implementation of a ChatGPT API using FastAPI and OpenAI's GPT model. 
 The API allows users to input a prompt and generate a response from the model.
 
+Up to 10 messages are stored in Redis. 
+The cache allows the conversation to continue with ChatGPT.
+
+## Prerequisite
+- Docker
+- Redis
+
+Before running the application, make sure that Docker and Redis are installed and running on your system.
+
 ## Installation
 1. Clone the repository:
 ```bash
