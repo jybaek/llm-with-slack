@@ -47,6 +47,7 @@ async def chat(
     redis_client: RedisClient = Depends(RedisClient),
     user_id: str = "u_1234",
 ):
+    print(message.__dict__)
     openai.api_key = api_key
 
     # Cache messages

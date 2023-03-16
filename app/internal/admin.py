@@ -16,13 +16,12 @@ async def user_cleanup(
 
 
 @router.post("/get-user-message")
-async def user_cleanup(
+async def get_user_message(
     redis_client: RedisClient = Depends(RedisClient),
     user_id: str = "u_1234",
 ):
     redis_conn = redis_client.get_conn()
     return redis_conn.lrange(user_id, 0, -1)
-
 
 
 @router.post("/all-cleanup")
