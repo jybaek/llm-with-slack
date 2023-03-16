@@ -4,9 +4,9 @@ import openai
 from enum import Enum
 from fastapi import APIRouter, Security, HTTPException, Depends
 from fastapi.security import APIKeyHeader
+from openai.error import AuthenticationError
 from pydantic import BaseModel
 from starlette import status
-from starlette.requests import Request
 from starlette.responses import Response
 
 from app.models.redis import RedisClient
@@ -39,7 +39,6 @@ async def models(api_key: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_er
 @router.post("/chat")
 async def chat(
     message: Message,
-    request: Request,
     model: Model = Model.GPT_3_5_TURBO,
     max_tokens: int = 2048,
     presence_penalty: float = 0.5,
@@ -56,13 +55,17 @@ async def chat(
     messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, 10)]
 
     # https://platform.openai.com/docs/api-reference/completions/create
-    result = openai.ChatCompletion.create(
-        model=model.value,
-        max_tokens=max_tokens,
-        presence_penalty=presence_penalty,
-        frequency_penalty=frequency_penalty,
-        messages=list(reversed(messages)),
-    )
+    try:
+        result = openai.ChatCompletion.create(
+            model=model.value,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            messages=list(reversed(messages)),
+        )
+
+    except AuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     try:
         resp = result.get("choices")[0].get("message")
