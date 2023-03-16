@@ -4,7 +4,7 @@ import openai
 from enum import Enum
 from fastapi import APIRouter, Security, HTTPException, Depends
 from fastapi.security import APIKeyHeader
-from openai.error import AuthenticationError
+from openai.error import AuthenticationError, RateLimitError
 from pydantic import BaseModel
 from starlette import status
 from starlette.responses import Response
@@ -55,17 +55,22 @@ async def chat(
     messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, 10)]
 
     # https://platform.openai.com/docs/api-reference/completions/create
-    try:
-        result = openai.ChatCompletion.create(
-            model=model.value,
-            max_tokens=max_tokens,
-            presence_penalty=presence_penalty,
-            frequency_penalty=frequency_penalty,
-            messages=list(reversed(messages)),
-        )
+    while True:
+        try:
+            result = openai.ChatCompletion.create(
+                model=model.value,
+                max_tokens=max_tokens,
+                presence_penalty=presence_penalty,
+                frequency_penalty=frequency_penalty,
+                messages=messages,
+            )
 
-    except AuthenticationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except AuthenticationError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except RateLimitError as e:
+            print(e)
+            continue
+        break
 
     try:
         resp = result.get("choices")[0].get("message")
