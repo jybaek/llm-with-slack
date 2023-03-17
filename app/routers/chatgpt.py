@@ -22,11 +22,6 @@ class Message(BaseModel):
 
 class Model(Enum):
     GPT_3_5_TURBO = "gpt-3.5-turbo"
-    TEXT_DAVINCI_003 = "text-davinci-003"
-    DAVINCI = "davinci"
-    CURIE = "curie"
-    BABBAGE = "babbage"
-    ADA = "ada"
 
 
 @router.get("/models")
@@ -46,6 +41,7 @@ async def chat(
     api_key: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_error=True)),
     redis_client: RedisClient = Depends(RedisClient),
     user_id: str = "u_1234",
+    number_of_messages_to_keep: int = 5,
 ):
     print(message.__dict__)
     openai.api_key = api_key
@@ -53,7 +49,7 @@ async def chat(
     # Cache messages
     redis_conn = redis_client.get_conn()
     redis_conn.rpush(user_id, json.dumps(message.__dict__))
-    messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, 10)]
+    messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, number_of_messages_to_keep)]
 
     # https://platform.openai.com/docs/api-reference/completions/create
     while True:
@@ -65,20 +61,20 @@ async def chat(
                 frequency_penalty=frequency_penalty,
                 messages=messages,
             )
-
+            break
         except AuthenticationError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-        except RateLimitError as e:
-            print(e)
+        except RateLimitError:
             continue
-        break
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
     try:
         resp = result.get("choices")[0].get("message")
         # cache the response
         redis_conn.rpush(user_id, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__))
-        # Keep only the last 10 messages
-        redis_conn.ltrim(user_id, 0, 9)
+        # Keep only the last {number_of_messages_to_keep} messages
+        redis_conn.ltrim(user_id, 0, number_of_messages_to_keep-1)
         # Sending results messages
         return Response(resp.get("content"))
     except KeyError as e:
