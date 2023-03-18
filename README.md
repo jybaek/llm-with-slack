@@ -15,7 +15,7 @@ The cache allows the conversation to continue with ChatGPT.
 
 Before running the application, make sure that Docker and Redis are installed and running on your system.
 
-important: Set and use all the environment variables in app/config/constants.py.
+important: Set and use all the environment variables in [app/config/constants.py](app/config/constants.py).
 
 ## Local Execution Guide
 1. First, to run this application in your local environment, please execute the following command to install the required libraries.
