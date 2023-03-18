@@ -41,7 +41,6 @@ async def chat(
     presence_penalty: float = 0.5,
     frequency_penalty: float = 0.5,
     api_key: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_error=True)),
-    redis_client: RedisClient = Depends(RedisClient),
     user_id: str = "u_1234",
     number_of_messages_to_keep: int = 5,
 ):
@@ -49,9 +48,12 @@ async def chat(
     openai.api_key = api_key
 
     # Cache messages
-    redis_conn = redis_client.get_conn()
-    redis_conn.rpush(user_id, json.dumps(message.__dict__))
-    messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, number_of_messages_to_keep)]
+    if number_of_messages_to_keep:
+        redis_conn = RedisClient().get_conn()
+        redis_conn.rpush(user_id, json.dumps(message.__dict__))
+        messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, number_of_messages_to_keep)]
+    else:
+        messages = [message.__dict__]
 
     # https://platform.openai.com/docs/api-reference/completions/create
     while True:
@@ -73,10 +75,14 @@ async def chat(
 
     try:
         resp = result.get("choices")[0].get("message")
-        # cache the response
-        redis_conn.rpush(user_id, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__))
-        # Keep only the last {number_of_messages_to_keep} messages
-        redis_conn.ltrim(user_id, 0, number_of_messages_to_keep - 1)
+
+        if number_of_messages_to_keep:
+            # cache the response
+            redis_conn.rpush(user_id, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__))
+
+            # Keep only the last {number_of_messages_to_keep} messages
+            redis_conn.ltrim(user_id, 0, number_of_messages_to_keep - 1)
+
         # Sending results messages
         return Response(resp.get("content"))
     except KeyError as e:
