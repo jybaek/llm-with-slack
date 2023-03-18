@@ -1,9 +1,6 @@
-import os
-
 import redis
 
-redis_host = os.environ.get("REDIS_HOST", "localhost")
-redis_port = int(os.environ.get("REDIS_PORT", 6379))
+from app.config.constants import redis_host, redis_port
 
 
 class RedisClient:
