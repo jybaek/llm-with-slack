@@ -1,4 +1,6 @@
 import json
+import logging
+
 import openai
 
 from enum import Enum
@@ -43,7 +45,7 @@ async def chat(
     user_id: str = "u_1234",
     number_of_messages_to_keep: int = 5,
 ):
-    print(message.__dict__)
+    logging.info(message.__dict__)
     openai.api_key = api_key
 
     # Cache messages
@@ -74,7 +76,7 @@ async def chat(
         # cache the response
         redis_conn.rpush(user_id, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__))
         # Keep only the last {number_of_messages_to_keep} messages
-        redis_conn.ltrim(user_id, 0, number_of_messages_to_keep-1)
+        redis_conn.ltrim(user_id, 0, number_of_messages_to_keep - 1)
         # Sending results messages
         return Response(resp.get("content"))
     except KeyError as e:

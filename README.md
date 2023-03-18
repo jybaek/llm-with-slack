@@ -15,6 +15,19 @@ The cache allows the conversation to continue with ChatGPT.
 
 Before running the application, make sure that Docker and Redis are installed and running on your system.
 
+## Local Execution Guide
+1. First, to run this application in your local environment, please execute the following command to install the required libraries.
+```bash
+pip install -r requirements.txt
+```
+
+2. Once the necessary libraries have been installed, execute the following command to run the application.
+```bash
+uvicorn app.main:app --reload
+```
+This command will run the application based on the app object in the main module of the app package. 
+You can use the --reload option to automatically reload the application when file changes are detected.
+
 ## Installation
 1. Clone the repository:
 ```bash
@@ -42,6 +55,10 @@ The API documentation can be found at `http://localhost:8000/docs` once the Dock
 You can save and continue conversations based on `user_id`. 
 Just put in a value that identifies the user. 
 For example, you can use the user's unique number, session information, etc. stored in the database.
+
+- `user_id`: This is the parameter that identifies the user. Conversations will be stored and retrieved based on this parameter. In other words, the chat history with User A will be separate from the chat history with User B.
+- `number_of_messages_to_keep`: This parameter specifies how many recent messages to keep in the chat history. It's generally better to keep more messages, but keep in mind that this can impact the cost of ChatGPT.
+- `For the remaining parameters, please refer to the following link for more details: https://beta.openai.com/docs/api-reference/completions/create. This link provides the API reference for creating completions with ChatGPT.
 
 ## License
 This project is licensed under the terms of the MIT license. See [LICENSE](license) for more information.
