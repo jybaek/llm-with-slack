@@ -1,3 +1,4 @@
+backoff==2.2.1
 fastapi==0.94.0
 itsdangerous==2.1.2
 openai==0.27.2
