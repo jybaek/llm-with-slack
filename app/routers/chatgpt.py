@@ -2,14 +2,17 @@ import json
 import logging
 from enum import Enum
 
-import backoff
 import openai
-from fastapi import APIRouter, Security, HTTPException
+from fastapi import APIRouter, Security
 from fastapi.security import APIKeyHeader
 from openai.error import AuthenticationError
 from pydantic import BaseModel
-from starlette import status
 from starlette.responses import Response
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)  # for exponential backoff
 
 from app.models.redis import RedisClient
 
@@ -35,7 +38,7 @@ async def models(api_key: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_er
     return await openai.Model.alist()
 
 
-@backoff.on_exception(backoff.expo, openai.error.RateLimitError, max_tries=3, max_time=10, jitter=None)
+@retry(wait=wait_random_exponential(min=2, max=10), stop=stop_after_attempt(5))
 def completions_with_backoff(**kwargs):
     return openai.ChatCompletion.create(**kwargs)
 
@@ -73,10 +76,10 @@ async def chat(
         )
     except AuthenticationError as e:
         logging.exception(e)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        return Response("The token is invalid.")
     except Exception as e:
         logging.exception(e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        return Response("오류가 발생했습니다 :sob: ")
 
     try:
         resp = result.get("choices")[0].get("message")
@@ -93,4 +96,4 @@ async def chat(
         return Response(resp.get("content"))
     except KeyError as e:
         logging.exception(e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+        return Response("오류가 발생했습니다 :sob: ")
