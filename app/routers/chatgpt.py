@@ -1,12 +1,12 @@
 import json
 import logging
-
-import openai
-
 from enum import Enum
-from fastapi import APIRouter, Security, HTTPException, Depends
+
+import backoff
+import openai
+from fastapi import APIRouter, Security, HTTPException
 from fastapi.security import APIKeyHeader
-from openai.error import AuthenticationError, RateLimitError
+from openai.error import AuthenticationError
 from pydantic import BaseModel
 from starlette import status
 from starlette.responses import Response
@@ -15,6 +15,8 @@ from app.models.redis import RedisClient
 
 API_KEY_NAME = "X-API-KEY"
 router = APIRouter()
+
+logging.getLogger('backoff').setLevel(logging.ERROR)
 
 
 class Message(BaseModel):
@@ -33,6 +35,11 @@ async def models(api_key: str = Security(APIKeyHeader(name=API_KEY_NAME, auto_er
     return await openai.Model.alist()
 
 
+@backoff.on_exception(backoff.expo, openai.error.RateLimitError, max_tries=3, max_time=10, jitter=None)
+def completions_with_backoff(**kwargs):
+    return openai.ChatCompletion.create(**kwargs)
+
+
 @router.post("/chat")
 async def chat(
     message: Message,
@@ -44,7 +51,7 @@ async def chat(
     user_id: str = "u_1234",
     number_of_messages_to_keep: int = 5,
 ):
-    logging.info(message.__dict__)
+    logging.info(f"request message: {message.__dict__}")
     openai.api_key = api_key
 
     # Cache messages
@@ -56,25 +63,24 @@ async def chat(
         messages = [message.__dict__]
 
     # https://platform.openai.com/docs/api-reference/completions/create
-    while True:
-        try:
-            result = openai.ChatCompletion.create(
-                model=model.value,
-                max_tokens=max_tokens,
-                presence_penalty=presence_penalty,
-                frequency_penalty=frequency_penalty,
-                messages=messages,
-            )
-            break
-        except AuthenticationError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-        except RateLimitError:
-            continue
-        except Exception as e:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    try:
+        result = completions_with_backoff(
+            model=model.value,
+            max_tokens=max_tokens,
+            presence_penalty=presence_penalty,
+            frequency_penalty=frequency_penalty,
+            messages=messages,
+        )
+    except AuthenticationError as e:
+        logging.exception(e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logging.exception(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
     try:
         resp = result.get("choices")[0].get("message")
+        logging.info(f"response message: {resp}")
 
         if number_of_messages_to_keep:
             # cache the response
@@ -86,4 +92,5 @@ async def chat(
         # Sending results messages
         return Response(resp.get("content"))
     except KeyError as e:
+        logging.exception(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
