@@ -73,7 +73,7 @@ async def chat(
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
             messages=messages,
-            request_timeout=10,
+            request_timeout=30,
         )
     except AuthenticationError as e:
         logging.exception(e)
