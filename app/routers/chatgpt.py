@@ -14,6 +14,7 @@ from tenacity import (
     wait_random_exponential,
 )  # for exponential backoff
 
+from app.config.constants import MESSAGE_EXPIRE_TIME
 from app.models.redis import RedisClient
 
 API_KEY_NAME = "X-API-KEY"
@@ -92,6 +93,7 @@ async def chat(
 
             # Keep only the last {number_of_messages_to_keep} messages
             redis_conn.ltrim(user_id, 0, number_of_messages_to_keep - 1)
+            redis_conn.expire(user_id, MESSAGE_EXPIRE_TIME)
 
         # Sending results messages
         return Response(resp.get("content"))
