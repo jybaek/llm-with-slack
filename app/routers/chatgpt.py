@@ -57,14 +57,12 @@ async def chat(
 ):
     logging.info(f"request message: {message.__dict__}")
     openai.api_key = api_key
+    messages = []
 
     # Cache messages
     if number_of_messages_to_keep:
         redis_conn = RedisClient().get_conn()
-        redis_conn.rpush(user_id, json.dumps(message.__dict__))
-        messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, number_of_messages_to_keep)]
-    else:
-        messages = [message.__dict__]
+        messages = [json.loads(message) for message in redis_conn.lrange(user_id, 0, -1)]
 
     # https://platform.openai.com/docs/api-reference/completions/create
     try:
@@ -73,7 +71,7 @@ async def chat(
             max_tokens=max_tokens,
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
-            messages=messages,
+            messages=messages + [message.__dict__],
             request_timeout=30,
         )
     except AuthenticationError as e:
@@ -89,10 +87,11 @@ async def chat(
 
         if number_of_messages_to_keep:
             # cache the response
+            redis_conn.rpush(user_id, json.dumps(message.__dict__))
             redis_conn.rpush(user_id, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__))
 
             # Keep only the last {number_of_messages_to_keep} messages
-            redis_conn.ltrim(user_id, 0, number_of_messages_to_keep - 1)
+            redis_conn.ltrim(user_id, number_of_messages_to_keep*-1, -1)
             redis_conn.expire(user_id, MESSAGE_EXPIRE_TIME)
 
         # Sending results messages
