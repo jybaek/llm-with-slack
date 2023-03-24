@@ -19,7 +19,12 @@ async def root():
     return Response("Hello ChatGPT Applications!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     uvicorn.run(
-        "app.main:app", host="0.0.0.0", port=8000, access_log=False, reload=True, timeout_keep_alive=65,
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        access_log=False,
+        reload=True,
+        timeout_keep_alive=65,
     )
