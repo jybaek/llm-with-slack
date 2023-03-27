@@ -1,3 +1,5 @@
+import json
+
 from fastapi import APIRouter, Depends
 
 from app.models.redis import RedisClient
@@ -30,7 +32,7 @@ async def get_context_message(
     context: str = "u_1234",
 ):
     redis_conn = redis_client.get_conn()
-    return redis_conn.lrange(context, 0, -1)
+    return [json.loads(message) for message in redis_conn.lrange(context, 0, -1)]
 
 
 @router.get("/get-context-list")

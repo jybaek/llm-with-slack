@@ -1,13 +1,16 @@
-[![Python 3.x](https://img.shields.io/badge/python-3.x-green.svg)](https://www.python.org/downloads/release/python-360/)
+[![Python 3.x](https://img.shields.io/badge/python-3.10-green.svg)](https://www.python.org/downloads/release/python-360/)
 
 ![logo](https://user-images.githubusercontent.com/10207709/225381809-51b4d378-fe26-4571-9135-d91957943d08.jpg)
 
 # ChatGPT API with FastAPI
-This repository contains a simple implementation of a ChatGPT API using FastAPI and OpenAI's GPT model. 
-The API allows users to input a prompt and generate a response from the model.
+This repository contains implementations that use OpenAI's ChatGPT model. 
+The basic structure is simple. When a message comes in via Slack, we generate a response via the ChatGPT API.
 
-Up to 10 messages are stored in Redis. 
-The cache allows the conversation to continue with ChatGPT.
+All settings are set via environment variables.
+See [here](./app/config/constants.py).
+- slack_token: A Slack token that begins with `XOXB`.
+- openai_token: An OpenAI token that begins with `sk`.
+- number_of_messages_to_keep: Set how many conversation histories to keep.
 
 ## Prerequisite
 - Docker
@@ -51,16 +54,6 @@ docker run --rm -it -p8000:8000 chatgpt-api
 
 ## API Documentation
 The API documentation can be found at `http://localhost:8000/docs` once the Docker container is running.
-
-## Usage
-![image](https://user-images.githubusercontent.com/10207709/225383322-2c7c24ad-8c4f-4864-be1e-a04ceae2c7fd.png)
-You can save and continue conversations based on `user_id`. 
-Just put in a value that identifies the user. 
-For example, you can use the user's unique number, session information, etc. stored in the database.
-
-- `user_id`: This is the parameter that identifies the user. Conversations will be stored and retrieved based on this parameter. In other words, the chat history with User A will be separate from the chat history with User B.
-- `number_of_messages_to_keep`: This parameter specifies how many recent messages to keep in the chat history. It's generally better to keep more messages, but keep in mind that this can impact the cost of ChatGPT.
-- `For the remaining parameters, please refer to the following link for more details: https://beta.openai.com/docs/api-reference/completions/create. This link provides the API reference for creating completions with ChatGPT.
 
 ## License
 This project is licensed under the terms of the MIT license. See [LICENSE](license) for more information.
