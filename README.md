@@ -1,6 +1,7 @@
 [![Python 3.x](https://img.shields.io/badge/python-3.10-green.svg)](https://www.python.org/downloads/release/python-360/)
 
-![logo](https://user-images.githubusercontent.com/10207709/225381809-51b4d378-fe26-4571-9135-d91957943d08.jpg)
+![image](https://user-images.githubusercontent.com/10207709/228000003-2fe1789e-7c03-42f1-bc82-f0e5bf5769a3.png)
+
 
 # ChatGPT API with FastAPI
 This repository contains implementations that use OpenAI's ChatGPT model. 
