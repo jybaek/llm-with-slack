@@ -31,8 +31,8 @@ class Model(Enum):
     stop=stop_after_attempt(5),
     retry=retry_if_exception_type(RateLimitError),
 )
-def completions_with_backoff(**kwargs):
-    return openai.ChatCompletion.create(**kwargs)
+async def completions_with_backoff(**kwargs):
+    return await openai.ChatCompletion.acreate(**kwargs)
 
 
 async def get_chatgpt(
@@ -55,7 +55,7 @@ async def get_chatgpt(
 
     # https://platform.openai.com/docs/api-reference/completions/create
     try:
-        result = completions_with_backoff(
+        result = await completions_with_backoff(
             model=model.value,
             max_tokens=max_tokens,
             presence_penalty=presence_penalty,
