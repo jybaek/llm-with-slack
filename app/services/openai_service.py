@@ -5,7 +5,6 @@ from enum import Enum
 import openai
 from openai.error import AuthenticationError, InvalidRequestError, RateLimitError
 from pydantic import BaseModel
-from starlette.responses import Response
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -61,7 +60,7 @@ async def get_chatgpt(
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
             messages=messages + [message.__dict__],
-            request_timeout=30,
+            request_timeout=60,
         )
     except AuthenticationError as e:
         logging.error(e)
