@@ -3,6 +3,7 @@ import logging
 from enum import Enum
 
 import openai
+from fastapi import Query
 from openai.error import AuthenticationError, InvalidRequestError, RateLimitError
 from pydantic import BaseModel
 from tenacity import (
@@ -13,6 +14,16 @@ from tenacity import (
 )  # for exponential backoff
 
 from app.config.constants import MESSAGE_EXPIRE_TIME
+from app.config.messages import (
+    model_description,
+    max_tokens_description,
+    temperature_description,
+    top_p_description,
+    presence_penalty_description,
+    frequency_penalty_description,
+    context_unit_description,
+    number_of_messages_to_keep_description,
+)
 from app.models.redis import RedisClient
 
 
@@ -37,12 +48,14 @@ async def completions_with_backoff(**kwargs):
 async def get_chatgpt(
     api_key: str,
     message: Message,
-    model: Model = Model.GPT_3_5_TURBO,
-    max_tokens: int = 2048,
-    presence_penalty: float = 0.5,
-    frequency_penalty: float = 0.5,
-    context_unit: str = "u_1234",
-    number_of_messages_to_keep: int = 6,
+    model: Model = Query(Model.GPT_3_5_TURBO, description=model_description),
+    max_tokens: int = Query(2048, description=max_tokens_description),
+    temperature: float = Query(1, description=temperature_description),
+    top_p: float = Query(1, description=top_p_description),
+    presence_penalty: float = Query(0.5, description=presence_penalty_description),
+    frequency_penalty: float = Query(0.5, description=frequency_penalty_description),
+    context_unit: str = Query("u_1234", description=context_unit_description),
+    number_of_messages_to_keep: int = Query(6, description=number_of_messages_to_keep_description),
 ):
     openai.api_key = api_key
     messages = []
@@ -57,6 +70,8 @@ async def get_chatgpt(
         result = await completions_with_backoff(
             model=model.value,
             max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=top_p,
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
             messages=messages + [message.__dict__],
