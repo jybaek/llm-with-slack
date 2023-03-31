@@ -5,7 +5,7 @@ import openai
 from fastapi import APIRouter, Depends
 from starlette.responses import Response
 
-from app.services.openai_service import get_chatgpt
+from app.services.openai_chat import get_chatgpt
 
 router = APIRouter()
 

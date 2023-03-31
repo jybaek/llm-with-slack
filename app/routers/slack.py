@@ -8,7 +8,7 @@ from starlette.responses import Response
 
 from app.config.constants import openai_token, slack_token, number_of_messages_to_keep
 from app.google.vision import text_detection, localize_objects
-from app.services.openai_service import get_chatgpt, Message, Model
+from app.services.openai_chat import get_chatgpt, Message, Model
 
 router = APIRouter()
 
@@ -43,6 +43,11 @@ def write_notification(slack_message: dict):
             api_key=openai_token,
             message=request_message,
             model=Model.GPT_3_5_TURBO,
+            max_tokens=2048,
+            temperature=1,
+            top_p=1,
+            presence_penalty=0.5,
+            frequency_penalty=0.5,
             context_unit=thread_ts,
             number_of_messages_to_keep=number_of_messages_to_keep,
         )
@@ -54,7 +59,7 @@ def write_notification(slack_message: dict):
     )
 
 
-@router.post("/slack")
+@router.post("")
 async def slack(message: dict, background_tasks: BackgroundTasks):
     if message.get("challenge"):
         return message.get("challenge")

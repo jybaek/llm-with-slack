@@ -8,8 +8,8 @@ from .internal import admin
 
 
 app = FastAPI()
-app.include_router(chatgpt.router)
-app.include_router(slack.router)
+app.include_router(chatgpt.router, prefix="/openai", tags=["openai"])
+app.include_router(slack.router, prefix="/slack", tags=["slack"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"], responses={418: {"description": "I'm a teapot"}})
 
 logging.basicConfig(level=logging.INFO)
