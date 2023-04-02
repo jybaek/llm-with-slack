@@ -46,7 +46,7 @@ async def get_completions(
 ):
     openai.api_key = api_key
 
-    # https://platform.openai.com/docs/api-reference/completions/create
+    # https://platform.openai.com/docs/api-reference/completions
     try:
         result = await completions_with_backoff(
             model=model.value,

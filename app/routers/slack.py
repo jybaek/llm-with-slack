@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 
 from fastapi import APIRouter
 from slack_sdk import WebClient
@@ -9,6 +10,7 @@ from starlette.responses import Response
 from app.config.constants import openai_token, slack_token, number_of_messages_to_keep
 from app.google.vision import text_detection, localize_objects
 from app.services.openai_chat import get_chatgpt, Message, Model
+from app.services.openai_images import get_images, ImageSize, ResponseFormat
 
 router = APIRouter()
 
@@ -18,6 +20,7 @@ def write_notification(slack_message: dict):
     event = slack_message.get("event")
     channel = event.get("channel")
     thread_ts = event.get("thread_ts") if event.get("thread_ts") else event.get("ts")
+    attachments = []
 
     # Image processing
     system_message = ""
@@ -32,30 +35,50 @@ def write_notification(slack_message: dict):
         )
         system_message += "이제 이 사진에 대해서 질문 할 거야. "
 
-    content = "".join(event.get("text").split("> ")[1:])
-    request_message = Message(role="user", content=system_message + content)
+    content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
 
-    logging.info(f"request_message: {request_message}")
+    # If it starts with !, it will create the image via DALL-E
+    if content.startswith("!"):
+        logging.info(f"request_message: {content}")
 
-    # Send messages to the ChatGPT server and respond to Slack
-    response_message = asyncio.run(
-        get_chatgpt(
-            api_key=openai_token,
-            message=request_message,
-            model=Model.GPT_3_5_TURBO,
-            max_tokens=2048,
-            temperature=1,
-            top_p=1,
-            presence_penalty=0.5,
-            frequency_penalty=0.5,
-            context_unit=thread_ts,
-            number_of_messages_to_keep=number_of_messages_to_keep,
+        # Send messages to the ChatGPT server and respond to Slack
+        images = asyncio.run(
+            get_images(
+                api_key=openai_token,
+                message=content,
+                n=1,
+                size=ImageSize.SIZE_512,
+                response_format=ResponseFormat.URL,
+            )
         )
-    )
+        attachments = [{"title": f"{index}", "image_url": image.get("url")} for index, image in enumerate(images)]
+        response_message = ""
+    else:
+        request_message = Message(role="user", content=system_message + content)
+        logging.info(f"request_message: {request_message}")
+
+        # Send messages to the ChatGPT server and respond to Slack
+        response_message = asyncio.run(
+            get_chatgpt(
+                api_key=openai_token,
+                message=request_message,
+                model=Model.GPT_3_5_TURBO,
+                max_tokens=2048,
+                temperature=1,
+                top_p=1,
+                presence_penalty=0.5,
+                frequency_penalty=0.5,
+                context_unit=thread_ts,
+                number_of_messages_to_keep=number_of_messages_to_keep,
+            )
+        )
     logging.info(f"response_message: {response_message}")
     client = WebClient(token=slack_token)
     client.chat_postMessage(
-        channel=channel, text=response_message, thread_ts=event.get("ts") if event.get("ts") else event.get("thread_ts")
+        channel=channel,
+        text=response_message,
+        thread_ts=event.get("ts") if event.get("ts") else event.get("thread_ts"),
+        attachments=attachments,
     )
 
 
