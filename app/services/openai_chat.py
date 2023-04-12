@@ -87,9 +87,9 @@ async def get_chatgpt(
             return "너무 긴 답변을 유도하셨습니다. 이미지를 첨부하셨다면 글자가 너무 많지 않은지 확인해주세요."
         else:
             return "오류가 발생했습니다 :sob: 다시 시도해 주세요."
-    except Timeout:
+    except Timeout as e:
+        logging.error(e)
         return "OpenAI 서버가 응답이 없습니다. 다시 시도해 주세요."
-
     except Exception as e:
         logging.exception(e)
         if number_of_messages_to_keep:
