@@ -62,7 +62,7 @@ def write_notification(slack_message: dict):
             get_chatgpt(
                 api_key=openai_token,
                 message=request_message,
-                model=model if model else Model.GPT_3_5_TURBO,
+                model=model if model else Model.GPT_3_5_TURBO.value,
                 max_tokens=2048,
                 temperature=1,
                 top_p=1,

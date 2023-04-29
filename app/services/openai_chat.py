@@ -49,7 +49,7 @@ async def completions_with_backoff(**kwargs):
 async def get_chatgpt(
     api_key: str,
     message: Message,
-    model: Model = Query(Model.GPT_3_5_TURBO, description=model_description),
+    model: str = Query(Model.GPT_3_5_TURBO.value, description=model_description),
     max_tokens: int = Query(2048, description=max_tokens_description),
     temperature: float = Query(1, description=temperature_description),
     top_p: float = Query(1, description=top_p_description),
@@ -69,7 +69,7 @@ async def get_chatgpt(
     # https://platform.openai.com/docs/api-reference/completions/create
     try:
         result = await completions_with_backoff(
-            model=model.value,
+            model=model,
             max_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,
