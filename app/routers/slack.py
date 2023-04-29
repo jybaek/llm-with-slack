@@ -7,7 +7,7 @@ from slack_sdk import WebClient
 from starlette.background import BackgroundTasks
 from starlette.responses import Response
 
-from app.config.constants import openai_token, slack_token, number_of_messages_to_keep
+from app.config.constants import openai_token, slack_token, number_of_messages_to_keep, model
 from app.google.vision import text_detection, localize_objects
 from app.services.openai_chat import get_chatgpt, Message, Model
 from app.services.openai_images import get_images, ImageSize, ResponseFormat
@@ -62,7 +62,7 @@ def write_notification(slack_message: dict):
             get_chatgpt(
                 api_key=openai_token,
                 message=request_message,
-                model=Model.GPT_3_5_TURBO,
+                model=model if model else Model.GPT_3_5_TURBO,
                 max_tokens=2048,
                 temperature=1,
                 top_p=1,
