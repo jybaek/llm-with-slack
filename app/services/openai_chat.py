@@ -51,7 +51,7 @@ async def get_chatgpt(
     message: Message,
     model: str = Query(Model.GPT_3_5_TURBO.value, description=model_description),
     max_tokens: int = Query(2048, description=max_tokens_description),
-    temperature: float = Query(1, description=temperature_description),
+    temperature: float = Query(0.7, description=temperature_description),
     top_p: float = Query(1, description=top_p_description),
     presence_penalty: float = Query(0.5, description=presence_penalty_description),
     frequency_penalty: float = Query(0.5, description=frequency_penalty_description),
@@ -68,8 +68,9 @@ async def get_chatgpt(
 
     # https://platform.openai.com/docs/api-reference/completions/create
     try:
-        result = await completions_with_backoff(
+        response = await completions_with_backoff(
             model=model,
+            stream=True,
             max_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,
@@ -80,40 +81,45 @@ async def get_chatgpt(
         )
     except AuthenticationError as e:
         logging.error(e)
-        return "The token is invalid."
+        raise Exception("The token is invalid.")
     except InvalidRequestError as e:
         logging.error(e)
         if "This model's maximum context length is 4097 tokens" in str(e):
             redis_conn.delete(context_unit)
-            return "너무 긴 답변을 유도하셨습니다. 이미지를 첨부하셨다면 글자가 너무 많지 않은지 확인해주세요."
+            raise Exception("너무 긴 답변을 유도하셨습니다. 이미지를 첨부하셨다면 글자가 너무 많지 않은지 확인해주세요.")
         else:
-            return "오류가 발생했습니다 :sob: 다시 시도해 주세요."
+            raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")
     except Timeout as e:
         logging.error(e)
-        return "OpenAI 서버가 응답이 없습니다. 다시 시도해 주세요."
+        raise Exception("OpenAI 서버가 응답이 없습니다. 다시 시도해 주세요.")
     except Exception as e:
         logging.exception(e)
         if number_of_messages_to_keep:
             redis_conn.lpop(context_unit)
             redis_conn.lpop(context_unit)
-        return "오류가 발생했습니다 :sob: 다시 시도해 주세요."
+        raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")
 
     try:
-        resp = result.get("choices")[0].get("message")
+        collected_messages = []
+        async for chunk in response:
+            chunk_message = chunk['choices'][0]['delta'].get("content")
+            collected_messages.append(chunk_message)
+            yield chunk_message if chunk_message else " "
+
+        full_reply_content = ''.join([m.get('content', '') for m in collected_messages if isinstance(m, dict)])
 
         if number_of_messages_to_keep:
             # cache the response
             redis_conn.rpush(context_unit, json.dumps(message.__dict__))
             redis_conn.rpush(
-                context_unit, json.dumps(Message(role=resp.get("role"), content=resp.get("content")).__dict__)
+                context_unit, json.dumps(Message(role="assistant", content=full_reply_content).__dict__)
             )
 
             # Keep only the last {number_of_messages_to_keep} messages
             redis_conn.ltrim(context_unit, number_of_messages_to_keep * -1, -1)
             redis_conn.expire(context_unit, MESSAGE_EXPIRE_TIME)
 
-        # Sending results messages
-        return resp.get("content")
+        # Sending responses messages
     except KeyError as e:
         logging.exception(e)
-        return "오류가 발생했습니다 :sob: 다시 시도해 주세요."
+        raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")
