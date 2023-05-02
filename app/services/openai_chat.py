@@ -76,7 +76,7 @@ async def get_chatgpt(
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
             messages=messages + [message.__dict__],
-            request_timeout=60,
+            request_timeout=120,
         )
     except AuthenticationError as e:
         logging.error(e)
