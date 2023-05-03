@@ -3,14 +3,13 @@ import logging
 import uvicorn
 from fastapi import FastAPI
 from starlette.responses import Response
-from .routers import chatgpt, slack, slack_with_stream
+from .routers import chatgpt, slack
 from .internal import admin
 
 
 app = FastAPI()
 app.include_router(chatgpt.router, prefix="/openai", tags=["openai"])
 app.include_router(slack.router, prefix="/slack", tags=["slack"])
-app.include_router(slack_with_stream.router, prefix="/slack_with_stream", tags=["slack"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"], responses={418: {"description": "I'm a teapot"}})
 
 logging.basicConfig(level=logging.INFO)

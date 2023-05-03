@@ -102,18 +102,16 @@ async def get_chatgpt(
     try:
         collected_messages = []
         async for chunk in response:
-            chunk_message = chunk['choices'][0]['delta'].get("content")
+            chunk_message = chunk["choices"][0]["delta"].get("content")
             collected_messages.append(chunk_message)
             yield chunk_message if chunk_message else " "
 
-        full_reply_content = ''.join([m.get('content', '') for m in collected_messages if isinstance(m, dict)])
+        full_reply_content = "".join([m.get("content", "") for m in collected_messages if isinstance(m, dict)])
 
         if number_of_messages_to_keep:
             # cache the response
             redis_conn.rpush(context_unit, json.dumps(message.__dict__))
-            redis_conn.rpush(
-                context_unit, json.dumps(Message(role="assistant", content=full_reply_content).__dict__)
-            )
+            redis_conn.rpush(context_unit, json.dumps(Message(role="assistant", content=full_reply_content).__dict__))
 
             # Keep only the last {number_of_messages_to_keep} messages
             redis_conn.ltrim(context_unit, number_of_messages_to_keep * -1, -1)

@@ -15,10 +15,11 @@ from app.services.openai_images import get_images, ImageSize, ResponseFormat
 router = APIRouter()
 
 
-def write_notification(slack_message: dict):
+async def write_notification(slack_message: dict):
     # Set the data to send
     event = slack_message.get("event")
     channel = event.get("channel")
+    user = event.get("user")
     thread_ts = event.get("thread_ts") if event.get("thread_ts") else event.get("ts")
     attachments = []
 
@@ -39,7 +40,7 @@ def write_notification(slack_message: dict):
 
     # If it starts with !, it will create the image via DALL-E
     if content.startswith("!"):
-        logging.info(f"request_message: {content}")
+        logging.info(f"[{channel}:{user}] request_message: {content}")
 
         # Send messages to the ChatGPT server and respond to Slack
         images = asyncio.run(
@@ -55,31 +56,61 @@ def write_notification(slack_message: dict):
         response_message = ""
     else:
         request_message = Message(role="user", content=system_message + content)
-        logging.info(f"request_message: {request_message}")
+        logging.info(f"[{channel}:{user}] request_message: {request_message}")
 
         # Send messages to the ChatGPT server and respond to Slack
-        response_message = asyncio.run(
-            get_chatgpt(
-                api_key=openai_token,
-                message=request_message,
-                model=model if model else Model.GPT_3_5_TURBO.value,
-                max_tokens=2048,
-                temperature=1,
-                top_p=1,
-                presence_penalty=0.5,
-                frequency_penalty=0.5,
-                context_unit=thread_ts,
-                number_of_messages_to_keep=number_of_messages_to_keep,
-            )
+        response_message = get_chatgpt(
+            api_key=openai_token,
+            message=request_message,
+            model=model if model else Model.GPT_3_5_TURBO.value,
+            max_tokens=2048,
+            temperature=0.7,
+            top_p=1,
+            presence_penalty=0.5,
+            frequency_penalty=0.5,
+            context_unit=thread_ts,
+            number_of_messages_to_keep=number_of_messages_to_keep,
         )
-    logging.info(f"response_message: {response_message}")
+
     client = WebClient(token=slack_token)
-    client.chat_postMessage(
-        channel=channel,
-        text=response_message,
-        thread_ts=event.get("ts") if event.get("ts") else event.get("thread_ts"),
-        attachments=attachments,
-    )
+    first_message = True
+    message = ""
+    ts = ""
+    try:
+        async for chunk in response_message:
+            message += chunk
+            if first_message:
+                result = client.chat_postMessage(
+                    channel=channel,
+                    text=message,
+                    thread_ts=thread_ts,
+                    attachments=attachments,
+                )
+                first_message = False
+                ts = result["ts"]
+            else:
+                if len(message) % 10 == 0:
+                    client.chat_update(
+                        channel=channel,
+                        text=message,
+                        ts=ts,
+                        as_user=True,
+                    )
+        client.chat_update(
+            channel=channel,
+            text=message,
+            ts=ts,
+            as_user=True,
+        )
+    except Exception as e:
+        client.chat_postMessage(
+            channel=channel,
+            text=str(e),
+            thread_ts=thread_ts,
+            attachments=attachments,
+        )
+
+    logging.info(f"[{channel}:{user}] response_message: {message}")
 
 
 @router.post("")
