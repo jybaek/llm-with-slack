@@ -13,7 +13,7 @@ from tenacity import (
     retry_if_exception_type,
 )  # for exponential backoff
 
-from app.config.constants import MESSAGE_EXPIRE_TIME
+from app.config.constants import MESSAGE_EXPIRE_TIME, system_content
 from app.config.messages import (
     model_description,
     max_tokens_description,
@@ -65,6 +65,9 @@ async def get_chatgpt(
     if number_of_messages_to_keep:
         redis_conn = RedisClient().get_conn()
         messages = [json.loads(message) for message in redis_conn.lrange(context_unit, 0, -1)]
+
+    if system_content:
+        messages.insert(0, {"role": "system", "content": system_content})
 
     # https://platform.openai.com/docs/api-reference/completions/create
     try:

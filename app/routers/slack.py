@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import re
 
@@ -10,7 +9,6 @@ from starlette.responses import Response
 from app.config.constants import openai_token, slack_token, number_of_messages_to_keep, model
 from app.google.vision import text_detection, localize_objects
 from app.services.openai_chat import get_chatgpt, Message, Model
-from app.services.openai_images import get_images, ImageSize, ResponseFormat
 
 router = APIRouter()
 
@@ -22,55 +20,38 @@ async def write_notification(slack_message: dict):
     user = event.get("user")
     thread_ts = event.get("thread_ts") if event.get("thread_ts") else event.get("ts")
     attachments = []
+    image_summary = ""
 
     # Image processing
-    system_message = ""
     if files := event.get("files"):
         texts_in_image = text_detection(files)
         object_in_image = localize_objects(files)
-        system_message = "\n".join(
+        image_summary = "\n".join(
             [
                 f"{index} 번째 사진에는 다음과 같은 글자와 객체가 있어. {text}, {object_}."
                 for index, (text, object_) in enumerate(zip(texts_in_image, object_in_image), 1)
             ]
         )
-        system_message += "이제 이 사진에 대해서 질문 할 거야. "
+        image_summary += "이제 이 사진에 대해서 질문 할 거야. "
 
     content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
 
-    # If it starts with !, it will create the image via DALL-E
-    if content.startswith("!"):
-        logging.info(f"[{channel}:{user}] request_message: {content}")
+    request_message = Message(role="user", content=image_summary + content)
+    logging.info(f"[{channel}:{user}] request_message: {request_message}")
 
-        # Send messages to the ChatGPT server and respond to Slack
-        images = asyncio.run(
-            get_images(
-                api_key=openai_token,
-                message=content,
-                n=1,
-                size=ImageSize.SIZE_512,
-                response_format=ResponseFormat.URL,
-            )
-        )
-        attachments = [{"title": f"{index}", "image_url": image.get("url")} for index, image in enumerate(images)]
-        response_message = ""
-    else:
-        request_message = Message(role="user", content=system_message + content)
-        logging.info(f"[{channel}:{user}] request_message: {request_message}")
-
-        # Send messages to the ChatGPT server and respond to Slack
-        response_message = get_chatgpt(
-            api_key=openai_token,
-            message=request_message,
-            model=model if model else Model.GPT_3_5_TURBO.value,
-            max_tokens=2048,
-            temperature=0.7,
-            top_p=1,
-            presence_penalty=0.5,
-            frequency_penalty=0.5,
-            context_unit=thread_ts,
-            number_of_messages_to_keep=number_of_messages_to_keep,
-        )
+    # Send messages to the ChatGPT server and respond to Slack
+    response_message = get_chatgpt(
+        api_key=openai_token,
+        message=request_message,
+        model=model if model else Model.GPT_3_5_TURBO.value,
+        max_tokens=2048,
+        temperature=0.7,
+        top_p=1,
+        presence_penalty=0.5,
+        frequency_penalty=0.5,
+        context_unit=thread_ts,
+        number_of_messages_to_keep=number_of_messages_to_keep,
+    )
 
     client = WebClient(token=slack_token)
     first_message = True
