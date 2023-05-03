@@ -3,10 +3,6 @@
 Have a casual conversation - attach an image and you can talk about it too.
 ![image](https://user-images.githubusercontent.com/10207709/228000003-2fe1789e-7c03-42f1-bc82-f0e5bf5769a3.png)
 
-If you start a message with an exclamation point (!), DALL-E will generate an image!
-![image](https://user-images.githubusercontent.com/10207709/229355786-7ed703c3-76be-456e-a153-8d901b4f21b0.png)
-
-
 # ChatGPT API with FastAPI
 This repository contains implementations that use OpenAI's ChatGPT model. 
 The basic structure is simple. When a message comes in via Slack, we generate a response via the ChatGPT API.
@@ -16,6 +12,7 @@ See [here](./app/config/constants.py).
 - slack_token: A Slack token that begins with `XOXB`.
 - openai_token: An OpenAI token that begins with `sk`.
 - number_of_messages_to_keep: Set how many conversation histories to keep.
+- system_content: Enter the system content for ChatGPT.
 
 ## Prerequisite
 - Docker
