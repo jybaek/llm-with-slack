@@ -6,13 +6,12 @@ from slack_sdk import WebClient
 from starlette.background import BackgroundTasks
 from starlette.responses import Response
 
-from app.config.constants import openai_token, slack_token, number_of_messages_to_keep, model
+from app.config.constants import openai_token, slack_token, number_of_messages_to_keep, model, slack_token2
 from app.google.vision import text_detection, localize_objects
 from app.services.google_palm import get_palm_chat
 from app.services.openai_chat import get_chatgpt, Message, Model
 
 router = APIRouter()
-client = WebClient(token=slack_token)
 
 
 async def call_chatgpt(slack_message: dict):
@@ -59,6 +58,7 @@ async def call_chatgpt(slack_message: dict):
     message = ""
     ts = ""
     try:
+        client = WebClient(token=slack_token)
         async for chunk in response_message:
             message += chunk
             if first_message:
@@ -109,6 +109,7 @@ async def call_palm(slack_message: dict):
         message=content,
         context_unit=thread_ts
     )
+    client = WebClient(token=slack_token2)
     client.chat_postMessage(
         channel=channel,
         text=response_message,
