@@ -8,12 +8,14 @@ from starlette.responses import Response
 
 from app.config.constants import openai_token, slack_token, number_of_messages_to_keep, model
 from app.google.vision import text_detection, localize_objects
+from app.services.google_palm import get_palm_chat
 from app.services.openai_chat import get_chatgpt, Message, Model
 
 router = APIRouter()
+client = WebClient(token=slack_token)
 
 
-async def write_notification(slack_message: dict):
+async def call_chatgpt(slack_message: dict):
     # Set the data to send
     event = slack_message.get("event")
     channel = event.get("channel")
@@ -53,7 +55,6 @@ async def write_notification(slack_message: dict):
         number_of_messages_to_keep=number_of_messages_to_keep,
     )
 
-    client = WebClient(token=slack_token)
     first_message = True
     message = ""
     ts = ""
@@ -94,13 +95,40 @@ async def write_notification(slack_message: dict):
     logging.info(f"[{channel}:{user}] response_message: {message}")
 
 
+async def call_palm(slack_message: dict):
+    # Set the data to send
+    event = slack_message.get("event")
+    channel = event.get("channel")
+    user = event.get("user")
+    thread_ts = event.get("thread_ts") if event.get("thread_ts") else event.get("ts")
+
+    content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
+    logging.info(f"[{channel}:{user}] request_message: {content}")
+
+    response_message = await get_palm_chat(
+        message=content,
+        context_unit=thread_ts
+    )
+    client.chat_postMessage(
+        channel=channel,
+        text=response_message,
+        thread_ts=event.get("ts") if event.get("ts") else event.get("thread_ts"),
+    )
+
+    logging.info(f"[{channel}:{user}] response_message: {response_message}")
+
+
 @router.post("")
 async def slack(message: dict, background_tasks: BackgroundTasks):
     if message.get("challenge"):
         return message.get("challenge")
 
-    # Because Slack is constrained to give a response in 3 seconds, ChatGPT processing is handled by background_tasks.
-    background_tasks.add_task(write_notification, message)
+    if message.get("api_app_id") == "A03LFTM5C15":  # caley-bot
+        # Because Slack is constrained to give a response in 3 seconds, ChatGPT processing is handled by background_tasks.
+        background_tasks.add_task(call_chatgpt, message)
+    else:
+        background_tasks.add_task(call_palm, message)
+
 
     logging.info("response ok")
     return Response("ok")
