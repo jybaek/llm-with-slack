@@ -39,7 +39,7 @@ async def call_chatgpt(slack_message: dict):
     content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
 
     request_message = Message(role="user", content=image_summary + content)
-    logging.info(f"[{api_app_id}:{channel}:{user}] request_message: {request_message}")
+    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {request_message}")
 
     # Send messages to the ChatGPT server and respond to Slack
     response_message = get_chatgpt(
@@ -93,7 +93,7 @@ async def call_chatgpt(slack_message: dict):
             attachments=attachments,
         )
 
-    logging.info(f"[{api_app_id}:{channel}:{user}] response_message: {message}")
+    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] response_message: {message}")
 
 
 async def call_palm(slack_message: dict):
@@ -105,7 +105,7 @@ async def call_palm(slack_message: dict):
     thread_ts = event.get("thread_ts") if event.get("thread_ts") else event.get("ts")
 
     content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
-    logging.info(f"[{api_app_id}:{channel}:{user}] request_message: {content}")
+    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {content}")
 
     response_message = await get_palm_chat(
         message=content,
@@ -118,7 +118,7 @@ async def call_palm(slack_message: dict):
         thread_ts=event.get("ts") if event.get("ts") else event.get("thread_ts"),
     )
 
-    logging.info(f"[{api_app_id}:{channel}:{user}] response_message: {response_message}")
+    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] response_message: {response_message}")
 
 
 @router.post("")
