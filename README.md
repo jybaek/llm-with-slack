@@ -1,8 +1,5 @@
 [![Python 3.x](https://img.shields.io/badge/python-3.10-green.svg)](https://www.python.org/downloads/release/python-360/)
 
-Have a casual conversation - attach an image and you can talk about it too.
-![image](https://user-images.githubusercontent.com/10207709/228000003-2fe1789e-7c03-42f1-bc82-f0e5bf5769a3.png)
-
 # ChatGPT API with FastAPI
 This repository contains implementations that use OpenAI's ChatGPT model. 
 The basic structure is simple. When a message comes in via Slack, we generate a response via the ChatGPT API.
