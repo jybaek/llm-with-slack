@@ -1,4 +1,3 @@
-import json
 import logging
 from enum import Enum
 
@@ -13,7 +12,7 @@ from tenacity import (
     retry_if_exception_type,
 )  # for exponential backoff
 
-from app.config.constants import MESSAGE_EXPIRE_TIME, system_content
+from app.config.constants import system_content
 from app.config.messages import (
     model_description,
     max_tokens_description,
@@ -21,10 +20,7 @@ from app.config.messages import (
     top_p_description,
     presence_penalty_description,
     frequency_penalty_description,
-    context_unit_description,
-    number_of_messages_to_keep_description,
 )
-from app.models.redis import RedisClient
 
 
 class Message(BaseModel):
@@ -48,23 +44,15 @@ async def completions_with_backoff(**kwargs):
 
 async def get_chatgpt(
     api_key: str,
-    message: Message,
+    messages: list,
     model: str = Query(Model.GPT_3_5_TURBO.value, description=model_description),
     max_tokens: int = Query(2048, description=max_tokens_description),
     temperature: float = Query(0.7, description=temperature_description),
     top_p: float = Query(1, description=top_p_description),
     presence_penalty: float = Query(0.5, description=presence_penalty_description),
     frequency_penalty: float = Query(0.5, description=frequency_penalty_description),
-    context_unit: str = Query("u_1234", description=context_unit_description),
-    number_of_messages_to_keep: int = Query(6, description=number_of_messages_to_keep_description),
 ):
     openai.api_key = api_key
-    messages = []
-
-    # Fetch cached messages.
-    if number_of_messages_to_keep:
-        redis_conn = RedisClient().get_conn()
-        messages = [json.loads(message) for message in redis_conn.lrange(context_unit, 0, -1)]
 
     if system_content:
         messages.insert(0, {"role": "system", "content": system_content})
@@ -79,7 +67,7 @@ async def get_chatgpt(
             top_p=top_p,
             presence_penalty=presence_penalty,
             frequency_penalty=frequency_penalty,
-            messages=messages + [message.__dict__],
+            messages=messages,
             request_timeout=300,
         )
     except AuthenticationError as e:
@@ -88,7 +76,6 @@ async def get_chatgpt(
     except InvalidRequestError as e:
         logging.error(e)
         if "This model's maximum context length is 4097 tokens" in str(e):
-            redis_conn.delete(context_unit)
             raise Exception("너무 긴 답변을 유도하셨습니다. 이미지를 첨부하셨다면 글자가 너무 많지 않은지 확인해주세요.")
         else:
             raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")
@@ -97,9 +84,6 @@ async def get_chatgpt(
         raise Exception("OpenAI 서버가 응답이 없습니다. 다시 시도해 주세요.")
     except Exception as e:
         logging.exception(e)
-        if number_of_messages_to_keep:
-            redis_conn.lpop(context_unit)
-            redis_conn.lpop(context_unit)
         raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")
 
     try:
@@ -108,19 +92,6 @@ async def get_chatgpt(
             chunk_message = chunk["choices"][0]["delta"].get("content")
             collected_messages.append(chunk_message)
             yield chunk_message if chunk_message else " "
-
-        full_reply_content = "".join([m.get("content", "") for m in collected_messages if isinstance(m, dict)])
-
-        if number_of_messages_to_keep:
-            # cache the response
-            redis_conn.rpush(context_unit, json.dumps(message.__dict__))
-            redis_conn.rpush(context_unit, json.dumps(Message(role="assistant", content=full_reply_content).__dict__))
-
-            # Keep only the last {number_of_messages_to_keep} messages
-            redis_conn.ltrim(context_unit, number_of_messages_to_keep * -1, -1)
-            redis_conn.expire(context_unit, MESSAGE_EXPIRE_TIME)
-
-        # Sending responses messages
     except KeyError as e:
         logging.exception(e)
         raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")

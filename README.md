@@ -16,7 +16,6 @@ See [here](./app/config/constants.py).
 
 ## Prerequisite
 - Docker
-- Redis
 
 Before running the application, make sure that Docker and Redis are installed and running on your system.
 
