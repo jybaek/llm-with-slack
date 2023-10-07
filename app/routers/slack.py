@@ -23,9 +23,6 @@ async def call_chatgpt(slack_message: dict):
     client = WebClient(token=slack_token)
 
     # Parsing the request message.
-    content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
-    request_message = Message(role="user", content=content)
-    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {request_message}")
 
     # Get past chat history and fit it into the ChatGPT format.
     conversations_replies = client.conversations_replies(channel=channel, ts=thread_ts)
@@ -36,7 +33,7 @@ async def call_chatgpt(slack_message: dict):
             messages.append(Message(role="assistant", content=history.get("text")).__dict__)
         else:
             messages.append(Message(role="user", content=history.get("text")).__dict__)
-    messages.append(request_message.__dict__)
+    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {messages[-1].get('content')}")
 
     # Send messages to the ChatGPT server and respond to Slack
     response_message = get_chatgpt(
