@@ -47,20 +47,18 @@ async def call_chatgpt(slack_message: dict):
         frequency_penalty=0.5,
     )
 
-    first_message = True
     message = ""
     ts = ""
     try:
         async for chunk in response_message:
             message += chunk
-            if first_message:
+            if not ts:
                 result = client.chat_postMessage(
                     channel=channel,
                     text=message,
                     thread_ts=thread_ts,
                     attachments=attachments,
                 )
-                first_message = False
                 ts = result["ts"]
             else:
                 if len(message) % 10 == 0:

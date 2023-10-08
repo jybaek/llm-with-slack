@@ -14,7 +14,7 @@ See [here](./app/config/constants.py).
 ## Prerequisite
 - Docker
 
-Before running the application, make sure that Docker and Redis are installed and running on your system.
+Before running the application, make sure that Docker is installed and running on your system.
 
 important: Set and use all the environment variables in [app/config/constants.py](app/config/constants.py).
 
