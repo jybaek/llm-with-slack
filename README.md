@@ -1,5 +1,9 @@
 [![Python 3.x](https://img.shields.io/badge/python-3.10-green.svg)](https://www.python.org/downloads/release/python-360/)
 
+![image](https://github.com/jybaek/Hello-ChatGPT/assets/10207709/d92980a9-7f30-470c-850a-2a530a32dc80)
+
+> This is an image created with DALL-E 2. Use it for your Slatbot profile image.
+
 # ChatGPT API with FastAPI
 This repository contains implementations that use OpenAI's ChatGPT model. 
 The basic structure is simple. When a message comes in via Slack, we generate a response via the ChatGPT API.
@@ -29,7 +33,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 This command will run the application based on the app object in the main module of the app package. 
-You can use the --reload option to automatically reload the application when file changes are detected.
+You can use the `--reload` option to automatically reload the application when file changes are detected.
 
 ## Installation
 1. Clone the repository:
