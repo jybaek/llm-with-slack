@@ -54,4 +54,4 @@ docker run --rm -it -p8000:8000 chatgpt-api
 The API documentation can be found at `http://localhost:8000/docs` once the Docker container is running.
 
 ## License
-This project is licensed under the terms of the MIT license. See [LICENSE](license) for more information.
+This project is licensed under the terms of the Apache license. See [LICENSE](license) for more information.
