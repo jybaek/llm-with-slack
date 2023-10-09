@@ -1,5 +1,4 @@
 import logging
-import re
 
 from fastapi import APIRouter
 from slack_sdk import WebClient
@@ -22,17 +21,13 @@ async def call_chatgpt(slack_message: dict):
     attachments = []
     client = WebClient(token=slack_token)
 
-    # Parsing the request message.
-
     # Get past chat history and fit it into the ChatGPT format.
     conversations_replies = client.conversations_replies(channel=channel, ts=thread_ts)
-    chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep:]
-    messages = []
-    for history in chat_history:
-        if "app_id" in history:
-            messages.append(Message(role="assistant", content=history.get("text")).__dict__)
-        else:
-            messages.append(Message(role="user", content=history.get("text")).__dict__)
+    chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep :]
+    messages = [
+        Message(role="assistant" if "app_id" in history else "user", content=history.get("text")).__dict__
+        for history in chat_history
+    ]
     logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {messages[-1].get('content')}")
 
     # Send messages to the ChatGPT server and respond to Slack
