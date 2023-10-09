@@ -56,19 +56,13 @@ async def call_chatgpt(slack_message: dict):
                 )
                 ts = result["ts"]
             else:
-                if len(message) % 10 == 0:
+                if len(message) % 10 == 0 or (len(chunk) == 1 and chunk == " "):
                     client.chat_update(
                         channel=channel,
                         text=message,
                         ts=ts,
                         as_user=True,
                     )
-        client.chat_update(
-            channel=channel,
-            text=message,
-            ts=ts,
-            as_user=True,
-        )
     except Exception as e:
         client.chat_postMessage(
             channel=channel,
