@@ -1,14 +1,32 @@
+import base64
 import logging
+import tempfile
 
+import requests
 from fastapi import APIRouter
 from slack_sdk import WebClient
 from starlette.background import BackgroundTasks
 from starlette.responses import Response
 
 from app.config.constants import openai_token, slack_token, number_of_messages_to_keep, model
-from app.services.openai_chat import get_chatgpt, Message, Model
+from app.services.openai_chat import get_chatgpt, Model
 
 router = APIRouter()
+
+
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
+
+def download_file(url, filename):
+    r = requests.get(url, headers={"Authorization": f"Bearer {slack_token}"})
+    if r.status_code == 200:
+        with open(filename, "wb") as f:
+            f.write(r.content)
+        return True
+    else:
+        return False
 
 
 async def call_chatgpt(slack_message: dict):
@@ -24,10 +42,31 @@ async def call_chatgpt(slack_message: dict):
     # Get past chat history and fit it into the ChatGPT format.
     conversations_replies = client.conversations_replies(channel=channel, ts=thread_ts)
     chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep :]
-    messages = [
-        Message(role="assistant" if "app_id" in history else "user", content=history.get("text")).__dict__
-        for history in chat_history
-    ]
+    messages = []
+    with tempfile.TemporaryDirectory() as dir_path:
+        for history in chat_history:
+            role = "assistant" if "app_id" in history else "user"
+            content = []
+            if model == "gpt-4-turbo" and (files := history.get("files")):
+                for file in files:
+                    url = file.get("url_private")
+                    filename = f"{dir_path}/{file.get('name')}"
+                    if download_file(url, filename):
+                        content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{file.get('mimetype')};base64,{encode_image(filename)}"},
+                            }
+                        )
+                    else:
+                        logging.warning("Failed - Download error")
+            content.append({"type": "text", "text": history.get("text")})
+            messages.append(
+                {
+                    "role": role,
+                    "content": content,
+                }
+            )
     logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {messages[-1].get('content')}")
 
     # Send messages to the ChatGPT server and respond to Slack

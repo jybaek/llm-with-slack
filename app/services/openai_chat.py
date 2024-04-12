@@ -23,11 +23,6 @@ from app.config.messages import (
 )
 
 
-class Message(BaseModel):
-    role: str = "user"
-    content: str
-
-
 class Model(Enum):
     GPT4 = "gpt-4"
     GPT_3_5_TURBO = "gpt-3.5-turbo"
