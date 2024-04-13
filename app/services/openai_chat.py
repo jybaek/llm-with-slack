@@ -4,7 +4,6 @@ from enum import Enum
 import openai
 from fastapi import Query
 from openai.error import AuthenticationError, InvalidRequestError, RateLimitError, Timeout
-from pydantic import BaseModel
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -24,7 +23,7 @@ from app.config.messages import (
 
 
 class Model(Enum):
-    GPT4 = "gpt-4"
+    GPT4_TURBO = "gpt-4-turbo"
     GPT_3_5_TURBO = "gpt-3.5-turbo"
 
 
