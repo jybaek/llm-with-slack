@@ -10,10 +10,16 @@ The basic structure is simple. When a message comes in via Slack, we generate a 
 
 All settings are set via environment variables.
 See [here](./app/config/constants.py).
-- slack_token: A Slack token that begins with `XOXB`.
-- openai_token: An OpenAI token that begins with `sk`.
-- number_of_messages_to_keep: Set how many conversation histories to keep.
-- system_content: Enter the system content for ChatGPT.
+
+
+| envrionment                | description                                 | values        |
+|----------------------------|---------------------------------------------|---------------|
+| slack_token                | A Slack token that begins with `XOXB`       | required      |
+| openai_token               | An OpenAI token that begins with `sk`       | required      |
+| number_of_messages_to_keep | Set how many conversation histories to keep | 5             |
+| system_content             | Enter the system content for ChatGPT        |               |
+| model                      | GPT Model                                   | gpt-3.5-turbo |
+
 
 ## Prerequisite
 - Docker
