@@ -1,12 +1,14 @@
 [![Python 3.x](https://img.shields.io/badge/python-3.10-green.svg)](https://www.python.org/downloads/release/python-360/)
 
-![image](https://github.com/jybaek/Hello-ChatGPT/assets/10207709/d92980a9-7f30-470c-850a-2a530a32dc80)
+![image](https://github.com/jybaek/llm-with-slack/assets/10207709/d92980a9-7f30-470c-850a-2a530a32dc80)
 
 > This is an image created with DALL-E 2. Use it for your Slatbot profile image.
 
-# ChatGPT API with FastAPI
-This repository contains implementations that use OpenAI's ChatGPT model. 
-The basic structure is simple. When a message comes in via Slack, we generate a response via the ChatGPT API.
+# LLM API with FastAPI
+This repository connects the LLM API to Slack. 
+It currently supports implementations using OpenAI's ChatGPT and Google's Gemini model. 
+The basic structure is straightforward. 
+When a message arrives through Slack, we generate a response using the LLM's API.
 
 All settings are set via environment variables.
 See [here](./app/config/constants.py).
@@ -19,6 +21,7 @@ See [here](./app/config/constants.py).
 | number_of_messages_to_keep | Set how many conversation histories to keep | 5             |
 | system_content             | Enter the system content for ChatGPT        |               |
 | model                      | GPT Model                                   | gpt-3.5-turbo |
+| gemini_slack_token         | A Slack token that begins with `XOXB`       |               |
 
 
 ## Prerequisite
@@ -44,18 +47,18 @@ You can use the `--reload` option to automatically reload the application when f
 ## Installation
 1. Clone the repository:
 ```bash
-https://github.com/jybaek/Hello-ChatGPT.git
-cd Hello-ChatGPT
+https://github.com/jybaek/llm-with-slack.git
+cd llm-with-slack
 ```
 
 2. Build the Docker image:
 ```bash
-docker build -t chatgpt-api .
+docker build -t llm-api .
 ```
 
 3. Run the Docker container:
 ```bash
-docker run --rm -it -p8000:8000 chatgpt-api
+docker run --rm -it -p8000:8000 llm-api
 ```
 
 4. Open your web browser and go to `http://localhost:8000/docs` to access the Swagger UI and test the API.
