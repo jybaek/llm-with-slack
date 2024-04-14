@@ -1,4 +1,5 @@
 import logging
+import tempfile
 from enum import Enum
 
 import openai
@@ -11,7 +12,7 @@ from tenacity import (
     retry_if_exception_type,
 )  # for exponential backoff
 
-from app.config.constants import system_content
+from app.config.constants import system_content, number_of_messages_to_keep, model
 from app.config.messages import (
     model_description,
     max_tokens_description,
@@ -20,6 +21,7 @@ from app.config.messages import (
     presence_penalty_description,
     frequency_penalty_description,
 )
+from app.utils.file import download_file, encode_image
 
 
 class Model(Enum):
@@ -89,3 +91,31 @@ async def get_chatgpt(
     except KeyError as e:
         logging.exception(e)
         raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")
+
+
+async def build_chatgpt_message(slack_client, channel: str, thread_ts: str, user: str, api_app_id: str):
+    # Get past chat history and fit it into the ChatGPT format.
+    conversations_replies = slack_client.conversations_replies(channel=channel, ts=thread_ts)
+    chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep :]
+    messages = []
+    with tempfile.TemporaryDirectory() as dir_path:
+        for history in chat_history:
+            role = "assistant" if "app_id" in history else "user"
+            content = []
+            if model == "gpt-4-turbo" and (files := history.get("files")):
+                for file in files:
+                    url = file.get("url_private")
+                    filename = f"{dir_path}/{file.get('name')}"
+                    if download_file(url, filename):
+                        content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{file.get('mimetype')};base64,{encode_image(filename)}"},
+                            }
+                        )
+                    else:
+                        logging.warning("Failed - Download error")
+            content.append({"type": "text", "text": history.get("text")})
+            messages.append({"role": role, "content": content})
+    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {messages[-1].get('content')}")
+    return messages
