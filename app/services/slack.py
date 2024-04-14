@@ -1,12 +1,12 @@
 import logging
 
 from slack_sdk import WebClient
-from app.config.constants import slack_token, model, openai_token, LLMModel
+from app.config.constants import slack_token, gemini_slack_token, model, openai_token, LLMModel
 from app.services.google_gemini import build_gemini_message, get_gemini
 from app.services.openai_chat import get_chatgpt, Model, build_chatgpt_message
 
-slack_client = WebClient(token=slack_token)
-
+gpt_slack_client = WebClient(token=slack_token)
+gemini_slack_client = WebClient(token=gemini_slack_token if gemini_slack_token else slack_token)
 
 
 async def message_process(slack_message: dict, llm_model: LLMModel):
@@ -17,6 +17,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
     api_app_id = slack_message.get("api_app_id")
 
     if llm_model == LLMModel.GPT:
+        slack_client = gpt_slack_client
         # Set the data to send
         messages = await build_chatgpt_message(slack_client, channel, thread_ts, user, api_app_id)
 
@@ -32,6 +33,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
             frequency_penalty=0.5,
         )
     elif llm_model == LLMModel.GEMINI:
+        slack_client = gemini_slack_client
         chat, content = await build_gemini_message(slack_client, channel, thread_ts, user, api_app_id)
         logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {event.get('text')}")
         response_message = get_gemini(chat, content + event.get("text"))
