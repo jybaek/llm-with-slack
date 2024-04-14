@@ -63,6 +63,11 @@ docker run --rm -it -p8000:8000 llm-api
 
 4. Open your web browser and go to `http://localhost:8000/docs` to access the Swagger UI and test the API.
 
+## Sample
+|Gemini|GPT|
+|------|---|
+|![Gemini](https://github.com/jybaek/llm-with-slack/assets/10207709/e4144e6a-82e9-493b-b951-754424751bab)|![GPT](https://github.com/jybaek/llm-with-slack/assets/10207709/4c4dbe4b-3221-4263-b0e2-ca02bc37f9fa)|
+
 ## API Documentation
 The API documentation can be found at `http://localhost:8000/docs` once the Docker container is running.
 
