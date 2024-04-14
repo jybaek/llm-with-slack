@@ -44,6 +44,8 @@ uvicorn app.main:app --reload
 This command will run the application based on the app object in the main module of the app package. 
 You can use the `--reload` option to automatically reload the application when file changes are detected.
 
+![image](https://github.com/jybaek/llm-with-slack/assets/10207709/8b2b6740-b2e8-4648-86e2-e247a203c542)
+
 ## Installation
 1. Clone the repository:
 ```bash
