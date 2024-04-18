@@ -12,7 +12,7 @@ from tenacity import (
     retry_if_exception_type,
 )  # for exponential backoff
 
-from app.config.constants import system_content, number_of_messages_to_keep, model
+from app.config.constants import system_content, number_of_messages_to_keep, model, MAX_FILE_BYTES
 from app.config.messages import (
     model_description,
     max_tokens_description,
@@ -99,11 +99,13 @@ async def build_chatgpt_message(slack_client, channel: str, thread_ts: str, user
     chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep :]
     messages = []
     with tempfile.TemporaryDirectory() as dir_path:
-        for history in chat_history:
+        for index, history in enumerate(chat_history, start=1):
             role = "assistant" if "app_id" in history else "user"
             content = []
-            if model == "gpt-4-turbo" and (files := history.get("files")):
+            if model == "gpt-4-turbo" and (files := history.get("files", [])):
                 for file in files:
+                    if file.get("size") > MAX_FILE_BYTES:
+                        continue
                     url = file.get("url_private")
                     filename = f"{dir_path}/{file.get('name')}"
                     if download_file(url, filename):
@@ -115,6 +117,9 @@ async def build_chatgpt_message(slack_client, channel: str, thread_ts: str, user
                         )
                     else:
                         logging.warning("Failed - Download error")
+                if index == len(chat_history):
+                    if list(filter(lambda x: x["size"] > MAX_FILE_BYTES, files)):
+                        raise Exception(f"서버 비용 문제로 {MAX_FILE_BYTES/1000/1000}MB 이상되는 이미지는 처리할 수 없습니다")
             content.append({"type": "text", "text": history.get("text")})
             messages.append({"role": role, "content": content})
     logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {messages[-1].get('content')}")

@@ -3,7 +3,7 @@ import tempfile
 
 import vertexai
 
-from app.config.constants import number_of_messages_to_keep
+from app.config.constants import number_of_messages_to_keep, MAX_FILE_BYTES
 from vertexai.generative_models import GenerativeModel, Content, Part, Image
 import vertexai.preview.generative_models as generative_models
 
@@ -28,7 +28,7 @@ safety_settings = {
 }
 
 
-async def build_gemini_message(slack_client, channel: str, thread_ts: str, user: str, api_app_id: str):
+async def build_gemini_message(slack_client, channel: str, thread_ts: str):
     # Get past chat history and fit it into the Gemini format.
     conversations_replies = slack_client.conversations_replies(channel=channel, ts=thread_ts)
     chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep :]
@@ -41,8 +41,10 @@ async def build_gemini_message(slack_client, channel: str, thread_ts: str, user:
             # 사용자와 모델이 메시지를 번갈아가면서 주고받지 않으면 오류가 발생하기 때문에 아래와 같은 처리를 함
             if role == "user":
                 content = f"{content}. {history.get('text')}"
-                if files := history.get("files"):
+                if files := history.get("files", []):
                     for file in files:
+                        if file.get("size") > MAX_FILE_BYTES:
+                            continue
                         url = file.get("url_private")
                         filename = f"{dir_path}/{file.get('name')}"
                         if download_file(url, filename):
@@ -50,6 +52,8 @@ async def build_gemini_message(slack_client, channel: str, thread_ts: str, user:
                         else:
                             logging.warning("Failed - Download error")
                 if index == len(chat_history):
+                    if list(filter(lambda x: x["size"] > MAX_FILE_BYTES, files)):
+                        raise Exception(f"서버 비용 문제로 {MAX_FILE_BYTES/1000/1000}MB 이상되는 이미지는 처리할 수 없습니다")
                     parts = [Part.from_text(content)]
                     if images:
                         parts.extend([Part.from_image(Image.load_from_file(image)) for image in images])
