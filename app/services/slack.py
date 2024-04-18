@@ -36,7 +36,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
         slack_client = gemini_slack_client
         chat, content = await build_gemini_message(slack_client, channel, thread_ts, user, api_app_id)
         logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {event.get('text')}")
-        response_message = get_gemini(chat, content + event.get("text"))
+        response_message = get_gemini(chat, content)
     else:
         raise Exception(f"Error - Unknown model: {llm_model}")
 

@@ -1,10 +1,13 @@
 import logging
+import tempfile
+
 import vertexai
 
 from app.config.constants import number_of_messages_to_keep
-from vertexai.generative_models import GenerativeModel, Content, Part
+from vertexai.generative_models import GenerativeModel, Content, Part, Image
 import vertexai.preview.generative_models as generative_models
 
+from app.utils.file import download_file
 
 vertexai.init(project="gde-cloud-project", location="us-central1")
 model = GenerativeModel(
@@ -30,19 +33,39 @@ async def build_gemini_message(slack_client, channel: str, thread_ts: str, user:
     conversations_replies = slack_client.conversations_replies(channel=channel, ts=thread_ts)
     chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep :]
     messages = []
+    images = []
     content = ""
-    # 사용자와 모델이 메시지를 번갈아가면서 주고받지 않으면 오류가 발생하기 때문에 아래와 같은 처리를 함
-    for history in chat_history[:-1]:
-        role = "model" if "app_id" in history else "user"
-        if role == "user":
-            content += history.get("text")
-        else:
-            messages.append(Content(role="user", parts=[Part.from_text(content)]))
-            messages.append(Content(role="model", parts=[Part.from_text(history.get("text"))]))
-            content = ""
+    with tempfile.TemporaryDirectory() as dir_path:
+        for index, history in enumerate(chat_history, start=1):
+            role = "model" if "app_id" in history else "user"
+            # 사용자와 모델이 메시지를 번갈아가면서 주고받지 않으면 오류가 발생하기 때문에 아래와 같은 처리를 함
+            if role == "user":
+                content = f"{content}. {history.get('text')}"
+                if files := history.get("files"):
+                    for file in files:
+                        url = file.get("url_private")
+                        filename = f"{dir_path}/{file.get('name')}"
+                        if download_file(url, filename):
+                            images.append(filename)
+                        else:
+                            logging.warning("Failed - Download error")
+                if index == len(chat_history):
+                    parts = [Part.from_text(content)]
+                    if images:
+                        parts.extend([Part.from_image(Image.load_from_file(image)) for image in images])
+                    messages.append(Content(role="user", parts=parts))
+            else:
+                parts = [Part.from_text(content)]
+                if images:
+                    parts.extend([Part.from_image(Image.load_from_file(image)) for image in images])
+                messages.append(Content(role="user", parts=parts))
+                messages.append(Content(role="model", parts=[Part.from_text(history.get("text"))]))
+                content = ""
+                images.clear()
 
+    last_message = messages.pop()
     chat = model.start_chat(history=messages)
-    return chat, content
+    return chat, last_message
 
 
 async def get_gemini(chat, message):
