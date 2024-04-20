@@ -3,13 +3,19 @@ import tempfile
 
 import vertexai
 
-from app.config.constants import number_of_messages_to_keep, MAX_FILE_BYTES, system_content, gemini_model
+from app.config.constants import (
+    number_of_messages_to_keep,
+    MAX_FILE_BYTES,
+    system_content,
+    gemini_model,
+    google_cloud_project_name,
+)
 from vertexai.generative_models import GenerativeModel, Content, Part, Image
 import vertexai.preview.generative_models as generative_models
 
 from app.utils.file import download_file
 
-vertexai.init(project="gde-cloud-project", location="us-central1")
+vertexai.init(project=google_cloud_project_name, location="us-central1")
 model = GenerativeModel(
     gemini_model,
     system_instruction=system_content,
