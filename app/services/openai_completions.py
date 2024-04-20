@@ -37,7 +37,7 @@ async def completions_with_backoff(**kwargs):
 async def get_completions(
     api_key: str,
     message: str,
-    model: Model = Query(Model.TEXT_DAVINCI_003, description=model_description),
+    gpt_model: Model = Query(Model.TEXT_DAVINCI_003, description=model_description),
     max_tokens: int = Query(2048, description=max_tokens_description),
     temperature: float = Query(1, description=temperature_description),
     top_p: float = Query(1, description=top_p_description),
@@ -49,7 +49,7 @@ async def get_completions(
     # https://platform.openai.com/docs/api-reference/completions
     try:
         result = await completions_with_backoff(
-            model=model.value,
+            gpt_model=gpt_model.value,
             max_tokens=max_tokens,
             temperature=temperature,
             top_p=top_p,

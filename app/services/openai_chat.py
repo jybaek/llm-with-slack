@@ -12,7 +12,7 @@ from tenacity import (
     retry_if_exception_type,
 )  # for exponential backoff
 
-from app.config.constants import system_content, number_of_messages_to_keep, model, MAX_FILE_BYTES
+from app.config.constants import system_content, number_of_messages_to_keep, gpt_model, MAX_FILE_BYTES
 from app.config.messages import (
     model_description,
     max_tokens_description,
@@ -41,7 +41,7 @@ async def completions_with_backoff(**kwargs):
 async def get_chatgpt(
     api_key: str,
     messages: list,
-    model: str = Query(Model.GPT_3_5_TURBO.value, description=model_description),
+    gpt_model: str = Query(Model.GPT_3_5_TURBO.value, description=model_description),
     max_tokens: int = Query(2048, description=max_tokens_description),
     temperature: float = Query(0.7, description=temperature_description),
     top_p: float = Query(1, description=top_p_description),
@@ -56,7 +56,7 @@ async def get_chatgpt(
     # https://platform.openai.com/docs/api-reference/completions/create
     try:
         response = await completions_with_backoff(
-            model=model,
+            model=gpt_model,
             stream=True,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -102,7 +102,7 @@ async def build_chatgpt_message(slack_client, channel: str, thread_ts: str):
         for index, history in enumerate(chat_history, start=1):
             role = "assistant" if "app_id" in history else "user"
             content = []
-            if model == "gpt-4-turbo" and (files := history.get("files", [])):
+            if gpt_model == "gpt-4-turbo" and (files := history.get("files", [])):
                 for file in files:
                     if file.get("size") > MAX_FILE_BYTES:
                         continue
