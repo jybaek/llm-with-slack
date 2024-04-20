@@ -9,6 +9,7 @@ This repository connects the LLM API to Slack.
 It currently supports implementations using OpenAI's ChatGPT and Google's Gemini model. 
 The basic structure is straightforward. 
 When a message arrives through Slack, we generate a response using the LLM's API.
+It has multimodal capabilities, enabling us to process and analyze images.
 
 All settings are set via environment variables.
 See [here](./app/config/constants.py).
@@ -44,7 +45,7 @@ uvicorn app.main:app --reload
 This command will run the application based on the app object in the main module of the app package. 
 You can use the `--reload` option to automatically reload the application when file changes are detected.
 
-![image](https://github.com/jybaek/llm-with-slack/assets/10207709/8b2b6740-b2e8-4648-86e2-e247a203c542)
+![image](https://github.com/jybaek/llm-with-slack/assets/10207709/fb235e7e-c99b-412d-8d54-765f74950794)
 
 ## Installation
 1. Clone the repository:
