@@ -21,7 +21,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
         if llm_model == LLMModel.GPT:
             slack_client = gpt_slack_client
             # Set the data to send
-            messages = await build_chatgpt_message(slack_client, channel, thread_ts, user, api_app_id)
+            messages = await build_chatgpt_message(slack_client, channel, thread_ts)
 
             # Send messages to the ChatGPT server and respond to Slack
             response_message = get_chatgpt(
@@ -36,7 +36,6 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
             )
         elif llm_model == LLMModel.GEMINI:
             slack_client = gemini_slack_client
-            logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {event.get('text')}")
             chat, content = await build_gemini_message(slack_client, channel, thread_ts)
             response_message = get_gemini(chat, content)
         else:
@@ -44,6 +43,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
     except Exception as e:
         response_message = async_generator(e.__str__())
 
+    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {event.get('text')}")
     message = ts = ""
     try:
         async for chunk in response_message:

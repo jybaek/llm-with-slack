@@ -93,7 +93,7 @@ async def get_chatgpt(
         raise Exception("오류가 발생했습니다 :sob: 다시 시도해 주세요.")
 
 
-async def build_chatgpt_message(slack_client, channel: str, thread_ts: str, user: str, api_app_id: str):
+async def build_chatgpt_message(slack_client, channel: str, thread_ts: str):
     # Get past chat history and fit it into the ChatGPT format.
     conversations_replies = slack_client.conversations_replies(channel=channel, ts=thread_ts)
     chat_history = conversations_replies.data.get("messages")[-1 * number_of_messages_to_keep :]
@@ -122,5 +122,4 @@ async def build_chatgpt_message(slack_client, channel: str, thread_ts: str, user
                         raise Exception(f"서버 비용 문제로 {MAX_FILE_BYTES/1000/1000}MB 이상되는 이미지는 처리할 수 없습니다")
             content.append({"type": "text", "text": history.get("text")})
             messages.append({"role": role, "content": content})
-    logging.info(f"[{thread_ts}][{api_app_id}:{channel}:{user}] request_message: {messages[-1].get('content')}")
     return messages
