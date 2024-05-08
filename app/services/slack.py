@@ -1,7 +1,8 @@
 import logging
 
 from slack_sdk import WebClient
-from app.config.constants import slack_token, gemini_slack_token, gpt_model, openai_token, LLMModel
+
+from app.config.constants import slack_token, gemini_slack_token, gpt_model, LLMModel
 from app.services.google_gemini import build_gemini_message, get_gemini
 from app.services.openai_chat import get_chatgpt, Model, build_chatgpt_message
 from app.utils.message import async_generator
@@ -25,7 +26,6 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
 
             # Send messages to the ChatGPT server and respond to Slack
             response_message = get_chatgpt(
-                api_key=openai_token,
                 messages=messages,
                 gpt_model=gpt_model if gpt_model else Model.GPT_3_5_TURBO.value,
                 max_tokens=2048,
