@@ -16,7 +16,7 @@ number_of_messages_to_keep = int(os.environ.get("number_of_messages_to_keep", "5
 system_content = os.environ.get("system_content")
 
 # Image
-MAX_FILE_BYTES = 1_000_000
+MAX_FILE_BYTES = 5_000_000
 
 
 class LLMModel(Enum):

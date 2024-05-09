@@ -8,8 +8,9 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-def download_file(url, filename):
-    r = requests.get(url, headers={"Authorization": f"Bearer {slack_token}"})
+def download_file(url: str, filename):
+    headers = {"Authorization": f"Bearer {slack_token}"} if "slack" in url else {}
+    r = requests.get(url, headers=headers)
     if r.status_code == 200:
         with open(filename, "wb") as f:
             f.write(r.content)

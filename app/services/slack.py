@@ -1,10 +1,15 @@
 import logging
+import re
+import tempfile
+from uuid import uuid4
 
 from slack_sdk import WebClient
 
-from app.config.constants import slack_token, gemini_slack_token, gpt_model, LLMModel
+from app.config.constants import slack_token, gemini_slack_token, gpt_model, LLMModel, openai_token
 from app.services.google_gemini import build_gemini_message, get_gemini
 from app.services.openai_chat import get_chatgpt, Model, build_chatgpt_message
+from app.services.openai_images import generate_image
+from app.utils.file import download_file
 from app.utils.message import async_generator
 
 gpt_slack_client = WebClient(token=slack_token)
@@ -20,20 +25,35 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
 
     try:
         if llm_model == LLMModel.GPT:
+            content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
             slack_client = gpt_slack_client
-            # Set the data to send
-            messages = await build_chatgpt_message(slack_client, channel, thread_ts)
+            if content.startswith("!"):
+                image_url_link = await generate_image(api_key=openai_token, prompt=content, size="1024x1024", quality="standard")
+                with tempfile.TemporaryDirectory() as dir_path:
+                    filename = f"{dir_path}/{uuid4()}"
+                    if download_file(image_url_link, filename):
+                        return slack_client.files_upload_v2(
+                            channel=channel,
+                            thread_ts=thread_ts,
+                            title="DALL-E",
+                            file=filename,
+                        )
+                    else:
+                        raise Exception(f"Error - download_file failed")
+            else:
+                # Set the data to send
+                messages = await build_chatgpt_message(slack_client, channel, thread_ts)
 
-            # Send messages to the ChatGPT server and respond to Slack
-            response_message = get_chatgpt(
-                messages=messages,
-                gpt_model=gpt_model if gpt_model else Model.GPT_3_5_TURBO.value,
-                max_tokens=2048,
-                temperature=0.7,
-                top_p=1,
-                presence_penalty=0.5,
-                frequency_penalty=0.5,
-            )
+                # Send messages to the ChatGPT server and respond to Slack
+                response_message = get_chatgpt(
+                    messages=messages,
+                    gpt_model=gpt_model if gpt_model else Model.GPT_3_5_TURBO.value,
+                    max_tokens=2048,
+                    temperature=0.7,
+                    top_p=1,
+                    presence_penalty=0.5,
+                    frequency_penalty=0.5,
+                )
         elif llm_model == LLMModel.GEMINI:
             slack_client = gemini_slack_client
             chat, content = await build_gemini_message(slack_client, channel, thread_ts)
