@@ -115,8 +115,6 @@ async def build_chatgpt_message(slack_client, channel: str, thread_ts: str):
                                 "image_url": {"url": f"data:{file.get('mimetype')};base64,{encode_image(filename)}"},
                             }
                         )
-                        if file.get("title") == "DALL-E":
-                            role = "assistant"
                     else:
                         logging.warning("Failed - Download error")
                 if index == len(chat_history):
