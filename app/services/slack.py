@@ -3,6 +3,7 @@ import re
 import tempfile
 from uuid import uuid4
 
+from openai import BadRequestError
 from slack_sdk import WebClient
 
 from app.config.constants import slack_token, gemini_slack_token, gpt_model, LLMModel, openai_token
@@ -60,6 +61,11 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
             response_message = get_gemini(chat, content)
         else:
             raise Exception(f"Error - Unknown model: {llm_model}")
+    except BadRequestError as e:
+        if e.code == "content_policy_violation":
+            response_message = async_generator(f"{e.body.get('message')}: 이미지 생성 요청에 부적합한 단어가 사용됐습니다. 표현을 변경해서 다시 시도해 주세요.")
+        else:
+            response_message = async_generator(e.__str__())
     except Exception as e:
         response_message = async_generator(e.__str__())
 
