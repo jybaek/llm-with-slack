@@ -1,4 +1,5 @@
 import logging
+import re
 import tempfile
 from enum import Enum
 
@@ -120,6 +121,6 @@ async def build_chatgpt_message(slack_client, channel: str, thread_ts: str):
                 if index == len(chat_history):
                     if list(filter(lambda x: x["size"] > MAX_FILE_BYTES, files)):
                         raise Exception(f"서버 비용 문제로 {MAX_FILE_BYTES/1000/1000}MB 이상되는 이미지는 처리할 수 없습니다")
-            content.append({"type": "text", "text": history.get("text")})
+            content.append({"type": "text", "text": re.sub(r"<@(.*?)>", "", history.get("text"))})
             messages.append({"role": role, "content": content})
     return messages
