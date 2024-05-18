@@ -44,6 +44,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
             else:
                 # Set the data to send
                 messages = await build_chatgpt_message(slack_client, channel, thread_ts)
+                messages = [re.sub(r"<@(.*?)>", "", message) for message in messages]
 
                 # Send messages to the ChatGPT server and respond to Slack
                 response_message = get_chatgpt(
