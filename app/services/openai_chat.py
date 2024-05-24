@@ -51,7 +51,6 @@ async def get_chatgpt(
     presence_penalty: float = Query(0.5, description=presence_penalty_description),
     frequency_penalty: float = Query(0.5, description=frequency_penalty_description),
 ):
-
     if system_content:
         messages.insert(0, {"role": "system", "content": system_content})
 

@@ -1,4 +1,5 @@
 import logging
+import re
 import tempfile
 
 import vertexai
@@ -47,7 +48,7 @@ async def build_gemini_message(slack_client, channel: str, thread_ts: str):
             role = "model" if "app_id" in history else "user"
             # 사용자와 모델이 메시지를 번갈아가면서 주고받지 않으면 오류가 발생하기 때문에 아래와 같은 처리를 함
             if role == "user":
-                content = f"{content}. {history.get('text')}"
+                content = f"{content}. {history.get('text')}" if content else history.get("text")
                 if files := history.get("files", []):
                     for file in files:
                         if file.get("size") > MAX_FILE_BYTES:
@@ -61,7 +62,7 @@ async def build_gemini_message(slack_client, channel: str, thread_ts: str):
                 if index == len(chat_history):
                     if list(filter(lambda x: x["size"] > MAX_FILE_BYTES, files)):
                         raise Exception(f"서버 비용 문제로 {MAX_FILE_BYTES/1000/1000}MB 이상되는 이미지는 처리할 수 없습니다")
-                    parts = [Part.from_text(content)]
+                    parts = [Part.from_text(re.sub(r"<@(.*?)>", "", content).lstrip())]
                     if images:
                         parts.extend([Part.from_image(Image.load_from_file(image)) for image in images])
                     messages.append(Content(role="user", parts=parts))

@@ -29,7 +29,9 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
             content = re.sub(r"<@(.*?)>", "", event.get("text")).lstrip()
             slack_client = gpt_slack_client
             if content.startswith("!"):
-                image_url_link = await generate_image(api_key=openai_token, prompt=content, size="1024x1024", quality="standard")
+                image_url_link = await generate_image(
+                    api_key=openai_token, prompt=content, size="1024x1024", quality="standard"
+                )
                 with tempfile.TemporaryDirectory() as dir_path:
                     filename = f"{dir_path}/{uuid4()}"
                     if download_file(image_url_link, filename):
@@ -63,7 +65,9 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
             raise Exception(f"Error - Unknown model: {llm_model}")
     except BadRequestError as e:
         if e.code == "content_policy_violation":
-            response_message = async_generator(f"{e.body.get('message')}: 이미지 생성 요청에 부적합한 단어가 사용됐습니다. 표현을 변경해서 다시 시도해 주세요.")
+            response_message = async_generator(
+                f"{e.body.get('message')}: 이미지 생성 요청에 부적합한 단어가 사용됐습니다. 표현을 변경해서 다시 시도해 주세요."
+            )
         else:
             response_message = async_generator(e.__str__())
     except Exception as e:
