@@ -10,6 +10,7 @@ from app.config.constants import (
     system_content,
     gemini_model,
     google_cloud_project_name,
+    enable_grounding,
 )
 from vertexai.generative_models import GenerativeModel, Content, Part, Image, Tool
 import vertexai.preview.generative_models as generative_models
@@ -18,11 +19,14 @@ from app.utils.file import download_file
 
 vertexai.init(project=google_cloud_project_name, location="us-central1")
 
-tools = [
-    # Tool.from_google_search_retrieval(
-    #     google_search_retrieval=generative_models.grounding.GoogleSearchRetrieval(disable_attribution=False)
-    # ),
-]
+tools = []
+
+if enable_grounding:
+    tools.append(
+        Tool.from_google_search_retrieval(
+            google_search_retrieval=generative_models.grounding.GoogleSearchRetrieval(disable_attribution=False)
+        ),
+    )
 
 model = GenerativeModel(
     gemini_model,
@@ -84,7 +88,7 @@ async def build_gemini_message(slack_client, channel: str, thread_ts: str):
                 images.clear()
 
     last_message = messages.pop()
-    chat = model.start_chat(history=messages)
+    chat = model.start_chat(history=messages, response_validation=False)
     return chat, last_message
 
 
@@ -97,6 +101,9 @@ async def get_gemini(chat, message):
     )
 
     async for chunk in responses:
-        chunk_message = chunk.text
-        yield chunk_message if chunk_message else " "
+        try:
+            chunk_message = chunk.text
+            yield chunk_message if chunk_message else " "
+        except ValueError as e:
+            ...
     yield " "
