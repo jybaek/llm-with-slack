@@ -19,9 +19,9 @@ from app.utils.file import download_file
 vertexai.init(project=google_cloud_project_name, location="us-central1")
 
 tools = [
-    Tool.from_google_search_retrieval(
-        google_search_retrieval=generative_models.grounding.GoogleSearchRetrieval(disable_attribution=False)
-    ),
+    # Tool.from_google_search_retrieval(
+    #     google_search_retrieval=generative_models.grounding.GoogleSearchRetrieval(disable_attribution=False)
+    # ),
 ]
 
 model = GenerativeModel(
