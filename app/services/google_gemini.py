@@ -11,19 +11,27 @@ from app.config.constants import (
     gemini_model,
     google_cloud_project_name,
 )
-from vertexai.generative_models import GenerativeModel, Content, Part, Image
+from vertexai.generative_models import GenerativeModel, Content, Part, Image, Tool
 import vertexai.preview.generative_models as generative_models
 
 from app.utils.file import download_file
 
 vertexai.init(project=google_cloud_project_name, location="us-central1")
+
+tools = [
+    Tool.from_google_search_retrieval(
+        google_search_retrieval=generative_models.grounding.GoogleSearchRetrieval(disable_attribution=False)
+    ),
+]
+
 model = GenerativeModel(
     gemini_model,
     system_instruction=system_content,
+    tools=tools,
 )
 
 generation_config = {
-    "max_output_tokens": 8192,
+    "max_output_tokens": 2048,
     "temperature": 1,
     "top_p": 0.95,
 }
