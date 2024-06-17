@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("/gpt")
-async def slack(request: Request, message: dict, background_tasks: BackgroundTasks, headers = Header(default=None)):
+async def slack(request: Request, message: dict, background_tasks: BackgroundTasks, headers=Header(default=None)):
     if message.get("challenge"):
         return message.get("challenge")
 

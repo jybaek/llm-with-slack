@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from openai import BadRequestError
 from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 from app.config.constants import slack_token, gemini_slack_token, gpt_model, LLMModel, openai_token
 from app.services.google_gemini import build_gemini_message, get_gemini
@@ -78,15 +79,24 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
     try:
         async for chunk in response_message:
             message += chunk
+            post_message = False
             if not ts:
+                post_message = True
+            else:
+                # Logic to avoid Slack rate limits.
+                if len(message) % 10 == 0 or (len(chunk) == 1 and chunk == " "):
+                    try:
+                        slack_client.chat_update(channel=channel, text=message, ts=ts, as_user=True)
+                    except SlackApiError as e:
+                        if e.response["error"] == "msg_too_long":
+                            post_message = True
+                        else:
+                            raise
+            if post_message:
                 result = slack_client.chat_postMessage(
                     channel=channel, text=message, thread_ts=thread_ts, attachments=[]
                 )
                 ts = result["ts"]
-            else:
-                # Logic to avoid Slack rate limits.
-                if len(message) % 10 == 0 or (len(chunk) == 1 and chunk == " "):
-                    slack_client.chat_update(channel=channel, text=message, ts=ts, as_user=True)
     except Exception as e:
         slack_client.chat_postMessage(channel=channel, text=str(e), thread_ts=thread_ts, attachments=[])
 
