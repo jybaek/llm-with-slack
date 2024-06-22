@@ -35,6 +35,18 @@ async def slack(request: Request, message: dict, background_tasks: BackgroundTas
     return Response("ok")
 
 
+@router.post("/claude")
+async def slack(request: Request, message: dict, background_tasks: BackgroundTasks):
+    if message.get("challenge"):
+        return message.get("challenge")
+    if request.headers.get("x-slack-retry-num") and request.headers.get("x-slack-retry-reason") == "http_timeout":
+        return Response("ok")
+    else:
+        # Because Slack is constrained to give a response in 3 seconds, ChatGPT processing is handled by background_tasks.
+        background_tasks.add_task(message_process, message, LLMModel.CLAUDE)
+    return Response("ok")
+
+
 @router.post("/random")
 async def slack(request: Request, message: dict, background_tasks: BackgroundTasks):
     if message.get("challenge"):
@@ -42,7 +54,7 @@ async def slack(request: Request, message: dict, background_tasks: BackgroundTas
     if request.headers.get("x-slack-retry-num") and request.headers.get("x-slack-retry-reason") == "http_timeout":
         return Response("ok")
     else:
-        llm_model = random.choices([LLMModel.GPT, LLMModel.GEMINI])[0]
+        llm_model = random.choices([LLMModel.GPT, LLMModel.GEMINI, LLMModel.CLAUDE])[0]
         # Because Slack is constrained to give a response in 3 seconds, ChatGPT processing is handled by background_tasks.
         background_tasks.add_task(message_process, message, llm_model)
     return Response("ok")

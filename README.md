@@ -15,15 +15,17 @@ All settings are set via environment variables.
 See [here](./app/config/constants.py).
 
 
-| envrionment                | description                                 | default            |
-|----------------------------|---------------------------------------------|--------------------|
-| slack_token                | A Slack token that begins with `XOXB`       | required           |
-| gemini_slack_token         | A Slack token that begins with `XOXB`       | required           |
-| openai_token               | An OpenAI token that begins with `sk`       | required           |
-| number_of_messages_to_keep | Set how many conversation histories to keep | 5                  |
-| system_content             | Enter the system content for ChatGPT        | N/A                |
-| gpt_model                  | GPT Model                                   | gpt-3.5-turbo      |
-| gemini_model               | Gemini Model                                | gemini-1.5-pro-001 |
+| envrionment                | description                                 | default                    |
+|----------------------------|---------------------------------------------|----------------------------|
+| slack_token                | A Slack token that begins with `XOXB`       | required                   |
+| gemini_slack_token         | A Slack token that begins with `XOXB`       | required                   |
+| claude_slack_token         | A Slack token that begins with `XOXB`       | required                   |
+| openai_token               | An OpenAI token that begins with `sk`       | required                   |
+| number_of_messages_to_keep | Set how many conversation histories to keep | 5                          |
+| system_content             | Enter the system content for ChatGPT        | N/A                        |
+| gpt_model                  | GPT Model                                   | gpt-3.5-turbo              |
+| gemini_model               | Gemini Model                                | gemini-1.5-pro-001         |
+| claude_model               | Claude Model                                | claude-3-5-sonnet@20240620 |
 
 
 ## Prerequisite

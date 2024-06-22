@@ -7,7 +7,15 @@ from openai import BadRequestError
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-from app.config.constants import slack_token, gemini_slack_token, gpt_model, LLMModel, openai_token
+from app.config.constants import (
+    slack_token,
+    gemini_slack_token,
+    gpt_model,
+    LLMModel,
+    openai_token,
+    claude_slack_token,
+)
+from app.services.anthropic_claude import build_claude_message, get_claude
 from app.services.google_gemini import build_gemini_message, get_gemini
 from app.services.openai_chat import get_chatgpt, Model, build_chatgpt_message
 from app.services.openai_images import generate_image
@@ -16,6 +24,7 @@ from app.utils.message import async_generator
 
 gpt_slack_client = WebClient(token=slack_token)
 gemini_slack_client = WebClient(token=gemini_slack_token if gemini_slack_token else slack_token)
+claude_slack_client = WebClient(token=claude_slack_token if claude_slack_token else slack_token)
 
 
 async def message_process(slack_message: dict, llm_model: LLMModel):
@@ -62,6 +71,10 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
             slack_client = gemini_slack_client
             chat, content = await build_gemini_message(slack_client, channel, thread_ts)
             response_message = get_gemini(chat, content)
+        elif llm_model == LLMModel.CLAUDE:
+            slack_client = claude_slack_client
+            messages = await build_claude_message(slack_client, channel, thread_ts)
+            response_message = get_claude(messages)
         else:
             raise Exception(f"Error - Unknown model: {llm_model}")
     except BadRequestError as e:

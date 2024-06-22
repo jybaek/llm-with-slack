@@ -6,3 +6,4 @@ openai==1.26.0
 slack-sdk==3.20.2
 tenacity==8.2.2
 uvicorn==0.21.0
+anthropic[vertex]==0.29.0
