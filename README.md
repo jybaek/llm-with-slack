@@ -18,8 +18,6 @@ See [here](./app/config/constants.py).
 | envrionment                | description                                 | default                    |
 |----------------------------|---------------------------------------------|----------------------------|
 | slack_token                | A Slack token that begins with `XOXB`       | required                   |
-| gemini_slack_token         | A Slack token that begins with `XOXB`       | required                   |
-| claude_slack_token         | A Slack token that begins with `XOXB`       | required                   |
 | openai_token               | An OpenAI token that begins with `sk`       | required                   |
 | number_of_messages_to_keep | Set how many conversation histories to keep | 5                          |
 | system_content             | Enter the system content for ChatGPT        | N/A                        |
