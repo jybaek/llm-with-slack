@@ -102,7 +102,7 @@ async def build_chatgpt_message(slack_client, channel: str, thread_ts: str):
         for index, history in enumerate(chat_history, start=1):
             role = "assistant" if "app_id" in history else "user"
             content = []
-            if gpt_model == "gpt-4-turbo" and (files := history.get("files", [])):
+            if gpt_model in ("gpt-4-turbo", "gpt-4o") and (files := history.get("files", [])):
                 for file in files:
                     if file.get("size") > MAX_FILE_BYTES:
                         continue
