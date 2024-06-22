@@ -27,6 +27,11 @@ See [here](./app/config/constants.py).
 | gemini_model               | Gemini Model                                | gemini-1.5-pro-001         |
 | claude_model               | Claude Model                                | claude-3-5-sonnet@20240620 |
 
+## Supported LLMs
+
+- OpenAI GPT
+- Google Gemini
+- Anthropic Claude
 
 ## Prerequisite
 - Docker
