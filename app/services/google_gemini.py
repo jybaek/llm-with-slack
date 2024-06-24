@@ -58,7 +58,8 @@ async def build_gemini_message(slack_client, channel: str, thread_ts: str):
     with tempfile.TemporaryDirectory() as dir_path:
         for index, history in enumerate(chat_history, start=1):
             role = "model" if "app_id" in history else "user"
-            # 사용자와 모델이 메시지를 번갈아가면서 주고받지 않으면 오류가 발생하기 때문에 아래와 같은 처리를 함
+            # The system expects strict alternation of user and model messages.
+            # This handling ensures that order is maintained to prevent unexpected behavior.
             if role == "user":
                 content = f"{content}. {history.get('text')}" if content else history.get("text")
                 if files := history.get("files", []):
@@ -103,7 +104,6 @@ async def get_gemini(chat, message):
     async for chunk in responses:
         try:
             chunk_message = chunk.text
-            yield chunk_message if chunk_message else " "
+            yield chunk_message
         except ValueError as e:
             ...
-    yield " "

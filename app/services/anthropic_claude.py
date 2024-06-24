@@ -72,5 +72,4 @@ async def get_claude(messages):
         model=claude_model,
     ) as stream:
         async for text in stream.text_stream:
-            yield text if text else " "
-    yield " "
+            yield text

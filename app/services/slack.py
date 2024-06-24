@@ -89,7 +89,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
                 post_message = True
             else:
                 # Logic to avoid Slack rate limits.
-                if len(message) % 10 == 0 or (len(chunk) == 1 and chunk == " "):
+                if len(message) % 10 == 0:
                     try:
                         slack_client.chat_update(channel=channel, text=message, ts=ts, as_user=True)
                     except SlackApiError as e:
@@ -102,6 +102,9 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
                     channel=channel, text=message, thread_ts=thread_ts, attachments=[]
                 )
                 ts = result["ts"]
+
+        # Handle the last message from the generator
+        slack_client.chat_update(channel=channel, text=message, ts=ts, as_user=True)
     except Exception as e:
         slack_client.chat_postMessage(channel=channel, text=str(e), thread_ts=thread_ts, attachments=[])
 
