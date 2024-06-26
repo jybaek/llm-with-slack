@@ -11,6 +11,7 @@ from app.config.constants import (
     gemini_model,
     google_cloud_project_name,
     enable_grounding,
+    max_token,
 )
 from vertexai.generative_models import GenerativeModel, Content, Part, Image, Tool
 import vertexai.preview.generative_models as generative_models
@@ -35,7 +36,7 @@ model = GenerativeModel(
 )
 
 generation_config = {
-    "max_output_tokens": 2048,
+    "max_output_tokens": max_token,
     "temperature": 1,
     "top_p": 0.95,
 }

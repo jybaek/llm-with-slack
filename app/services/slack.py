@@ -12,6 +12,7 @@ from app.config.constants import (
     gpt_model,
     LLMModel,
     openai_token,
+    max_token,
 )
 from app.services.anthropic_claude import build_claude_message, get_claude
 from app.services.google_gemini import build_gemini_message, get_gemini
@@ -55,7 +56,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
                 response_message = get_chatgpt(
                     messages=messages,
                     gpt_model=gpt_model if gpt_model else Model.GPT_3_5_TURBO.value,
-                    max_tokens=2048,
+                    max_tokens=max_token,
                     temperature=0.7,
                     top_p=1,
                     presence_penalty=0.5,

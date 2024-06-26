@@ -3,7 +3,13 @@ import re
 import tempfile
 
 from anthropic import AsyncAnthropicVertex
-from app.config.constants import google_cloud_project_name, number_of_messages_to_keep, claude_model, MAX_FILE_BYTES
+from app.config.constants import (
+    google_cloud_project_name,
+    number_of_messages_to_keep,
+    claude_model,
+    MAX_FILE_BYTES,
+    max_token,
+)
 from app.utils.file import download_file, encode_image
 
 LOCATION = "europe-west1"  # or "us-east5"
@@ -67,7 +73,7 @@ async def build_claude_message(slack_client, channel: str, thread_ts: str):
 
 async def get_claude(messages):
     async with client.messages.stream(
-        max_tokens=1024,
+        max_tokens=max_token,
         messages=messages,
         model=claude_model,
     ) as stream:
