@@ -86,6 +86,7 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
         async for chunk in response_message:
             message += chunk
             post_message = False
+            api_error = False
             if not ts:
                 post_message = True
             else:
@@ -96,9 +97,12 @@ async def message_process(slack_message: dict, llm_model: LLMModel):
                     except SlackApiError as e:
                         if e.response["error"] == "msg_too_long":
                             post_message = True
+                            api_error = True
                         else:
                             raise
             if post_message:
+                if api_error:
+                    message = chunk
                 result = slack_client.chat_postMessage(
                     channel=channel, text=message, thread_ts=thread_ts, attachments=[]
                 )
